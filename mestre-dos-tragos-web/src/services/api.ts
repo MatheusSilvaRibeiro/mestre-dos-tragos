@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://mestre-dos-tragos-api.onrender.com',
+  baseURL: 'https://mestre-dos-tragos-api.onrender.com/api',
 });
 
 // 
