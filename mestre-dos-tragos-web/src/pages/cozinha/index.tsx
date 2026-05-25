@@ -34,7 +34,7 @@ export default function Cozinha() {
   // pedido:atualizado → atualiza se ainda ativo, remove se mudou para PRONTO/ENTREGUE/CANCELADO
   // 
   useEffect(() => {
-    const s = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3333');
+    const s = io(import.meta.env.VITE_API_URL ?? 'https://mestre-dos-tragos-api.onrender.com');
 
     s.on('pedido:novo', (p: Pedido) => {
       if (!['PENDENTE', 'EM_PREPARO'].includes(p.status)) return;
