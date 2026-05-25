@@ -147,7 +147,9 @@ export async function getFaturamentoPeriodo(periodo: '7d' | '30d' | '90d') {
   const porDia = new Map<string, { faturamento: number; pedidos: number }>();
 
   pedidos.forEach(p => {
-    const dia   = p.criadoEm.toISOString().split('T')[0];
+    const dia = p.criadoEm.toLocaleDateString('sv-SE', {
+     timeZone: 'America/Sao_Paulo',
+});
     const atual = porDia.get(dia) ?? { faturamento: 0, pedidos: 0 };
     porDia.set(dia, {
       faturamento: atual.faturamento + Number(p.valorTotal),
