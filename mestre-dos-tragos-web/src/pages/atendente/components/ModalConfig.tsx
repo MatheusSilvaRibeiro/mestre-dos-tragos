@@ -28,6 +28,7 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
   const [sabores,    setSabores]    = useState<string[]>(['']); // PORCAO_MISTA — sempre inicia com 1 campo
   const [quantidade, setQtd]        = useState(1);
 
+
   const emoji       = produto.emoji ?? EMOJI_TIPO[produto.tipo] ?? '🍽️';
   const precoBase   = tamanho ? getPrecoTamanho(produto, tamanho) : Number(produto.preco);
   const saboresValid = sabores.filter(s => s.trim().length > 0);

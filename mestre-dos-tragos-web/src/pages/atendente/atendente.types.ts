@@ -40,12 +40,13 @@ export interface Produto {
 
 // Representa um item dentro do carrinho — inclui todas as configuracoes feitas no ModalConfig
 export interface ItemCarrinho {
-  produto:    Produto;
+  produto: Produto;
   quantidade: number;
-  tamanho?:   Tamanho;
+  tamanho?: Tamanho;
   adicionais: { adicional: Adicional; preco: number }[];
-  sabores:    string[];  // exclusivo de PORCAO_MISTA
-  precoUnit:  number;    // preco unitario ja calculado (base + adicionais + extras de sabor)
+  sabores: string[];
+  precoUnit: number;
+  observacoes?: string;
 }
 
 export interface PedidoCozinha {

@@ -2,122 +2,272 @@ import type { ItemCarrinho } from '../atendente.types';
 import { moeda } from '../atendente.helpers';
 
 interface Props {
-  carrinho:     ItemCarrinho[];
-  total:        number;
-  totalItens:   number;   // soma das quantidades — exibido no badge do header
-  obs:          string;
-  nomeCliente:  string;
-  enviando:     boolean;
-  sucesso:      boolean;  // true apos pedido enviado — bloqueia edicao
-  onObs:        (v: string) => void;
-  onLimpar:     () => void;
+  carrinho: ItemCarrinho[];
+  total: number;
+  totalItens: number;
+  obs: string;
+  nomeCliente: string;
+  enviando: boolean;
+  sucesso: boolean;
+  onObs: (v: string) => void;
+  onLimpar: () => void;
   onAlterarQtd: (index: number, delta: number) => void;
-  onRemover:    (index: number) => void;
-  onEnviar:     () => void;
+  onRemover: (index: number) => void;
+  onEnviar: () => void;
 }
 
 export function Carrinho({
-  carrinho, total, totalItens, obs, nomeCliente,
-  enviando, sucesso, onObs, onLimpar,
-  onAlterarQtd, onRemover, onEnviar,
+  carrinho,
+  total,
+  totalItens,
+  obs,
+  nomeCliente,
+  enviando,
+  sucesso,
+  onObs,
+  onLimpar,
+  onAlterarQtd,
+  onRemover,
+  onEnviar,
 }: Props) {
-  // Botao desabilitado se carrinho vazio, enviando ou ja enviado com sucesso
   const desabilitado = carrinho.length === 0 || enviando || sucesso;
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)', overflow: 'hidden', height: '100%' }}>
-
-      {/* HEADER — titulo, contagem de itens e botao de limpar */}
-      <div style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          <span style={{ fontSize: '0.9375rem' }}>🛒</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>Pedido</span>
-          {totalItens > 0 && (
-            <span style={{ background: 'var(--brand-primary)', color: '#000', borderRadius: 999, fontSize: '0.6875rem', fontWeight: 800, padding: '0.1rem 0.45rem' }}>
-              {totalItens}
-            </span>
-          )}
-        </div>
-        {/* Limpar so aparece se tiver itens e o pedido ainda nao foi enviado */}
-        {carrinho.length > 0 && !sucesso && (
-          <button
-            onClick={onLimpar}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#f43f5e', fontWeight: 600, padding: 0 }}
+    <aside
+      style={{
+        height: '100%',
+        background: 'linear-gradient(180deg, var(--bg-surface), #0d0d0d)',
+        borderLeft: '1px solid var(--border-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <header
+        style={{
+          padding: '1rem',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+        }}
+      >
+        <div>
+          <p
+            style={{
+              fontSize: '0.7rem',
+              color: 'var(--text-tertiary)',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '0.2rem',
+            }}
           >
-            Limpar
-          </button>
-        )}
-      </div>
+            Pedido atual
+          </p>
 
-      {/* LISTA DE ITENS — scrollavel */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.625rem 1rem' }}>
+          <h2
+            style={{
+              fontSize: '1rem',
+              color: 'var(--text-primary)',
+              margin: 0,
+              fontWeight: 800,
+            }}
+          >
+            {nomeCliente.trim() ? nomeCliente : 'Cliente não informado'}
+          </h2>
+        </div>
+
+        {totalItens > 0 && (
+          <span className="badge badge-brand">
+            {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+          </span>
+        )}
+      </header>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '1rem',
+        }}
+      >
         {carrinho.length === 0 ? (
-          // Estado vazio — instrucao para o atendente
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', color: 'var(--text-tertiary)', paddingTop: '2.5rem' }}>
-            <span style={{ fontSize: '2rem' }}>🛒</span>
-            <p style={{ margin: 0, fontSize: '0.8125rem', textAlign: 'center' }}>
-              Nenhum item.<br />
-              <span style={{ fontSize: '0.75rem' }}>Clique nos produtos ao lado.</span>
+          <div className="empty-state" style={{ height: '100%' }}>
+            <div className="empty-state-icon">🧾</div>
+            <p className="empty-state-title">Nenhum item no pedido</p>
+            <p className="empty-state-description">
+              Selecione um produto do cardápio para começar a montar o pedido.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {carrinho.map((item, index) => (
               <div
                 key={index}
-                style={{ padding: '0.5rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}
+                className="surface-elevated"
+                style={{
+                  padding: '0.875rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.625rem',
+                }}
               >
-                {/* NOME + BOTAO DE REMOVER */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.375rem' }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.produto.emoji} {item.produto.nome}
-                    {item.tamanho && <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> ({item.tamanho})</span>}
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      style={{
+                        fontSize: '0.875rem',
+                        fontWeight: 800,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {item.produto.nome}
+                    </p>
+
+                    {item.tamanho && (
+                      <p
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--brand-primary)',
+                          fontWeight: 700,
+                          margin: '0.2rem 0 0',
+                        }}
+                      >
+                        Tamanho {item.tamanho}
+                      </p>
+                    )}
+                  </div>
+
                   {!sucesso && (
-                    <button onClick={() => onRemover(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: '0.8125rem', padding: 0, lineHeight: 1, flexShrink: 0 }}>
-                      x
+                    <button
+                      onClick={() => onRemover(index)}
+                      className="btn btn-ghost btn-icon"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        flexShrink: 0,
+                        color: 'var(--text-tertiary)',
+                      }}
+                    >
+                      ×
                     </button>
                   )}
                 </div>
 
-                {/* ADICIONAIS — lista separada por virgula */}
                 {item.adicionais.length > 0 && (
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    + {item.adicionais.map(a => a.adicional.nome).join(', ')}
-                  </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    {item.adicionais.map(a => (
+                      <span key={a.adicional.id} className="badge badge-default">
+                        + {a.adicional.nome}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
-                {/* SABORES — exclusivo de PORCAO_MISTA */}
                 {item.sabores.length > 0 && (
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.sabores.join(' · ')}
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-secondary)',
+                      margin: 0,
+                    }}
+                  >
+                    Sabores: {item.sabores.join(' · ')}
                   </p>
                 )}
 
-                {/* CONTROLES DE QUANTIDADE + PRECO */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.125rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {item.observacoes && (
+                  <div
+                    style={{
+                      padding: '0.625rem',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'rgba(251,191,36,0.08)',
+                      border: '1px solid rgba(251,191,36,0.18)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: '0.6875rem',
+                        color: 'var(--text-tertiary)',
+                        textTransform: 'uppercase',
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        margin: '0 0 0.2rem',
+                      }}
+                    >
+                      Observação do item
+                    </p>
+                    <p
+                      style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {item.observacoes}
+                    </p>
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    paddingTop: '0.25rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <button
                       onClick={() => onAlterarQtd(index, -1)}
                       disabled={sucesso}
-                      style={{ width: 20, height: 20, borderRadius: '50%', border: '1px solid var(--bg-surface)', background: 'var(--bg-surface)', color: 'var(--text-primary)', cursor: sucesso ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      className="btn btn-secondary btn-icon"
+                      style={{ width: 28, height: 28 }}
                     >
                       -
                     </button>
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', width: 16, textAlign: 'center' }}>
+
+                    <span
+                      style={{
+                        minWidth: 24,
+                        textAlign: 'center',
+                        fontWeight: 900,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       {item.quantidade}
                     </span>
+
                     <button
                       onClick={() => onAlterarQtd(index, 1)}
                       disabled={sucesso}
-                      style={{ width: 20, height: 20, borderRadius: '50%', border: 'none', background: sucesso ? 'var(--bg-elevated)' : 'var(--brand-primary)', color: sucesso ? 'var(--text-tertiary)' : '#000', cursor: sucesso ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      className="btn btn-primary btn-icon"
+                      style={{ width: 28, height: 28 }}
                     >
                       +
                     </button>
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--brand-primary)', flexShrink: 0 }}>
+
+                  <strong
+                    style={{
+                      color: 'var(--brand-primary)',
+                      fontSize: '0.95rem',
+                    }}
+                  >
                     {moeda(item.precoUnit * item.quantidade)}
-                  </span>
+                  </strong>
                 </div>
               </div>
             ))}
@@ -125,55 +275,104 @@ export function Carrinho({
         )}
       </div>
 
-      {/* RODAPE — observacao, total e botao de envio */}
-      <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid var(--bg-elevated)', display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0, background: 'var(--bg-surface)' }}>
-
-        {/* CAMPO DE OBSERVACAO — desabilitado apos envio */}
+      <footer
+        style={{
+          padding: '1rem',
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          background: 'rgba(10,10,10,0.92)',
+        }}
+      >
         <textarea
-          placeholder="Observacao (opcional)..."
+          placeholder="Observação geral do pedido..."
           value={obs}
           onChange={e => onObs(e.target.value)}
           rows={2}
           disabled={sucesso}
-          style={{ width: '100%', padding: '0.4rem 0.625rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-elevated)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '0.75rem', resize: 'none', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.4, opacity: sucesso ? 0.5 : 1 }}
+          className="input-field"
+          style={{
+            resize: 'none',
+            fontSize: '0.8125rem',
+            opacity: sucesso ? 0.5 : 1,
+          }}
         />
 
-        {/* TOTAL */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total</span>
-          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--brand-primary)' }}>
-            {moeda(total)}
-          </span>
-        </div>
-
-        {/* AVISO — pedido sem identificacao de cliente */}
         {!nomeCliente.trim() && carrinho.length > 0 && !sucesso && (
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>
-            Pedido sem identificacao de cliente.
-          </p>
+          <div className="alert alert-warning" style={{ padding: '0.625rem 0.75rem' }}>
+            Pedido sem identificação de cliente.
+          </div>
         )}
 
-        {/* BOTAO ENVIAR — desabilitado quando carrinho vazio, enviando ou ja enviado */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-tertiary)',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                marginBottom: '0.15rem',
+              }}
+            >
+              Total do pedido
+            </p>
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)',
+                margin: 0,
+              }}
+            >
+              {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+            </p>
+          </div>
+
+          <strong
+            style={{
+              fontSize: '1.45rem',
+              color: 'var(--brand-primary)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+            }}
+          >
+            {moeda(total)}
+          </strong>
+        </div>
+
         <button
           onClick={onEnviar}
           disabled={desabilitado}
-          style={{ padding: '0.625rem', borderRadius: 'var(--radius-md)', border: 'none', background: desabilitado ? 'var(--bg-elevated)' : 'var(--brand-primary)', color: desabilitado ? 'var(--text-tertiary)' : '#000', fontWeight: 800, fontSize: '0.875rem', cursor: desabilitado ? 'not-allowed' : 'pointer', width: '100%', transition: 'all 0.15s' }}
+          className={desabilitado ? 'btn btn-secondary btn-lg' : 'btn btn-primary btn-lg'}
+          style={{ width: '100%' }}
         >
-          {enviando ? 'Enviando...' : 'Enviar para Cozinha'}
+          {enviando ? 'Enviando...' : sucesso ? 'Pedido enviado' : 'Enviar para cozinha'}
         </button>
 
-        {/* FEEDBACK DE SUCESSO — aparece apos o pedido ser enviado */}
+        {carrinho.length > 0 && !sucesso && (
+          <button
+            onClick={onLimpar}
+            className="btn btn-ghost"
+            style={{ width: '100%' }}
+          >
+            Limpar pedido
+          </button>
+        )}
+
         {sucesso && (
-          <div style={{ padding: '0.625rem', borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.10)', border: '1px solid var(--brand-primary)', display: 'flex', flexDirection: 'column', gap: '0.2rem', textAlign: 'center' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--brand-primary)' }}>
-              Pedido enviado para a cozinha!
-            </span>
-            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-              O faturamento e contabilizado apos a entrega.
-            </span>
+          <div className="alert alert-success">
+            Pedido enviado para a cozinha.
           </div>
         )}
-      </div>
-    </div>
+      </footer>
+    </aside>
   );
 }
