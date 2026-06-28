@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import api from '../../services/api';
 import type { Pedido } from './types';
 import PedidoCard from './PedidoCard';
@@ -7,12 +7,11 @@ import PedidoCard from './PedidoCard';
 export default function Cozinha() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setSocket] = useState<Socket | null>(null);
-  const [, setTick]   = useState(0);
+  const [agora, setAgora] = useState(() => Date.now());
 
-  // Tick a cada 10s para re-renderizar os timers dos cards sem precisar de estado nos filhos
+  // Atualiza o horario atual a cada 10s para recalcular os timers dos cards
   useEffect(() => {
-    const t = setInterval(() => setTick(n => n + 1), 10_000);
+    const t = setInterval(() => setAgora(Date.now()), 10_000);
     return () => clearInterval(t);
   }, []);
 
@@ -21,38 +20,41 @@ export default function Cozinha() {
     api.get('/pedidos?status=PENDENTE,EM_PREPARO&limit=50')
       .then(res => {
         const lista: Pedido[] = res.data.pedidos ?? [];
-        // Ordena do mais antigo para o mais novo — prioridade visual para quem esperou mais
-        setPedidos(lista.sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime()));
+        setPedidos(
+          lista.sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime())
+        );
       })
       .catch(() => setPedidos([]))
       .finally(() => setLoading(false));
   }, []);
 
-  // 
   // WEBSOCKET — atualizacoes em tempo real
-  // pedido:novo     → adiciona se for PENDENTE ou EM_PREPARO e ainda nao existir na lista
-  // pedido:atualizado → atualiza se ainda ativo, remove se mudou para PRONTO/ENTREGUE/CANCELADO
-  // 
   useEffect(() => {
     const s = io(import.meta.env.VITE_API_URL ?? 'https://mestre-dos-tragos-api.onrender.com');
 
     s.on('pedido:novo', (p: Pedido) => {
       if (!['PENDENTE', 'EM_PREPARO'].includes(p.status)) return;
+
       setPedidos(prev => {
-        if (prev.find(x => x.id === p.id)) return prev; // evita duplicatas
-        return [...prev, p].sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime());
+        if (prev.find(x => x.id === p.id)) return prev;
+
+        return [...prev, p].sort(
+          (a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime()
+        );
       });
     });
 
     s.on('pedido:atualizado', (p: Pedido) => {
-      if (['PENDENTE', 'EM_PREPARO'].includes(p.status))
+      if (['PENDENTE', 'EM_PREPARO'].includes(p.status)) {
         setPedidos(prev => prev.map(x => x.id === p.id ? p : x));
-      else
+      } else {
         setPedidos(prev => prev.filter(x => x.id !== p.id));
+      }
     });
 
-    setSocket(s);
-    return () => { s.disconnect(); };
+    return () => {
+      s.disconnect();
+    };
   }, []);
 
   // Aceitar pedido — muda status para EM_PREPARO e atualiza localmente
@@ -87,7 +89,6 @@ export default function Cozinha() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', overflow: 'hidden' }}>
 
-      {/* HEADER — identidade, status ao vivo e contadores */}
       <header style={{
         height:         58,
         background:     'var(--bg-surface)',
@@ -111,7 +112,6 @@ export default function Cozinha() {
           </div>
         </div>
 
-        {/* Contadores de pedidos por coluna */}
         <div style={{ display: 'flex', gap: '1rem' }}>
           {[
             { label: 'Pendentes',  valor: pendentes.length, cor: 'var(--brand-primary)' },
@@ -125,7 +125,6 @@ export default function Cozinha() {
         </div>
       </header>
 
-      {/* CONTEUDO — estado vazio ou kanban de duas colunas */}
       {pedidos.length === 0 ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--text-tertiary)' }}>
           <span style={{ fontSize: '3.5rem' }}>✅</span>
@@ -135,7 +134,6 @@ export default function Cozinha() {
       ) : (
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-          {/* COLUNA PENDENTES */}
           <div className="kanban-col" style={{ borderTop: '3px solid var(--brand-primary)', borderRight: '1px solid var(--border-color)' }}>
             <div className="kanban-col-header">
               <span>🔔</span>
@@ -148,11 +146,10 @@ export default function Cozinha() {
                 <span style={{ fontSize: '0.875rem' }}>Nenhum pendente</span>
               </div>
             ) : pendentes.map(p => (
-              <PedidoCard key={p.id} pedido={p} onAceitar={aceitar} onFinalizar={finalizar} />
+              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} />
             ))}
           </div>
 
-          {/* COLUNA EM PREPARO */}
           <div className="kanban-col" style={{ borderTop: '3px solid var(--color-success)' }}>
             <div className="kanban-col-header">
               <span>🔥</span>
@@ -165,7 +162,7 @@ export default function Cozinha() {
                 <span style={{ fontSize: '0.875rem' }}>Nenhum em preparo</span>
               </div>
             ) : emPreparo.map(p => (
-              <PedidoCard key={p.id} pedido={p} onAceitar={aceitar} onFinalizar={finalizar} />
+              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} />
             ))}
           </div>
 
