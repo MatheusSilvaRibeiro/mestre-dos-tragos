@@ -14,7 +14,7 @@ export async function listar(req: Request, res: Response) {
 
     return res.json(categorias);
 
-  } catch (error) {
+  } catch {
     return res.status(500).json({ erro: 'Erro ao listar categorias' });
   }
 }
@@ -50,7 +50,7 @@ export async function criar(req: Request, res: Response) {
       categoria
     });
 
-  } catch (error) {
+  } catch {
     return res.status(500).json({ erro: 'Erro ao criar categoria' });
   }
 }
@@ -87,7 +87,7 @@ export async function editar(req: Request, res: Response) {
       categoria: categoriaAtualizada
     });
 
-  } catch (error) {
+  } catch {
     return res.status(500).json({ erro: 'Erro ao editar categoria' });
   }
 }
@@ -129,7 +129,7 @@ export async function desativar(req: Request, res: Response) {
 
     return res.json({ mensagem: 'Categoria desativada com sucesso!' });
 
-  } catch (error) {
+  } catch  {
     return res.status(500).json({ erro: 'Erro ao desativar categoria' });
   }
 }
