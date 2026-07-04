@@ -122,13 +122,7 @@ export async function editarFuncionario(req: Request, res: Response) {
     const { nome, usuario, role, ativo, senha } = req.body;
 
     // Monta o objeto de atualização com os campos recebidos
-    const dados: {
-  nome?: string;
-  usuario?: string;
-  role?: 'ADMIN' | 'ATENDENTE' | 'COZINHA';
-  ativo?: boolean;
-  senha?: string;
-} = { nome, usuario, role, ativo };
+    const dados: any = { nome, usuario, role, ativo };
 
     // Se veio uma nova senha, criptografa antes de salvar
     if (senha) {

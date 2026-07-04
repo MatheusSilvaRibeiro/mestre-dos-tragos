@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Prisma, StatusPedido } from '@prisma/client';
 import prisma from '../config/prisma';
 
 // 
@@ -150,7 +149,7 @@ export async function rankingProdutos(req: Request, res: Response) {
     const { inicio, fim } = req.query;
 
     // Só considera itens de pedidos que foram de fato entregues
-    const where: Prisma.ItemPedidoWhereInput = {
+    const where: any = {
       pedido: { status: 'ENTREGUE' },
     };
 
@@ -161,7 +160,7 @@ export async function rankingProdutos(req: Request, res: Response) {
       dataFim.setHours(23, 59, 59, 999);
 
       where.pedido = {
-        ...(where.pedido as Prisma.PedidoWhereInput),
+        ...where.pedido,
         criadoEm: { gte: dataInicio, lte: dataFim },
       };
     }
@@ -217,7 +216,7 @@ export async function pedidosPorAtendente(req: Request, res: Response) {
   try {
     const { inicio, fim } = req.query;
 
-    const where: Prisma.PedidoWhereInput = {};
+    const where: any = {};
 
     if (inicio && fim) {
       const dataInicio = new Date(inicio as string);
@@ -290,13 +289,13 @@ export async function pedidosPorStatus(req: Request, res: Response) {
     const fim = new Date(base);
     fim.setHours(23, 59, 59, 999);
 
-    const statusList: StatusPedido[] = ['PENDENTE', 'EM_PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO'];
+    const statusList = ['PENDENTE', 'EM_PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO'];
     const resultado: Record<string, number> = {};
 
     // Conta pedidos de cada status separadamente — mais eficiente que filtrar no JS
     for (const status of statusList) {
       resultado[status] = await prisma.pedido.count({
-        where: { status, criadoEm: { gte: inicio, lte: fim } },
+        where: { status: status as any, criadoEm: { gte: inicio, lte: fim } },
       });
     }
 
@@ -323,7 +322,7 @@ export async function taxaCancelamento(req: Request, res: Response) {
   try {
     const { inicio, fim } = req.query;
 
-    const where: Prisma.PedidoWhereInput = {};
+    const where: any = {};
 
     if (inicio && fim) {
       const dataInicio = new Date(inicio as string);

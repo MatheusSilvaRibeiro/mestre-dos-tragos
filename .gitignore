@@ -1,19 +1,17 @@
 # Variáveis de ambiente
 .env
 backend/.env
-mestre-dos-tragos-web/.env
-*.env.local
+frontend/.env
 
 # Node modules
 node_modules/
 backend/node_modules/
-mestre-dos-tragos-web/node_modules/
+frontend/node_modules/
 
 # Build
 dist/
 build/
 backend/dist/
-mestre-dos-tragos-web/dist/
 
 # Logs
 *.log
