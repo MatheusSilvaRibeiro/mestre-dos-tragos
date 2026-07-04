@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import type { Produto, Categoria, Adicional, Tamanho, ProdutoPayload, TipoProduto, TamanhoForm } from './types';
+import type { Produto, Categoria, Adicional } from './types';
 
-type TipoForm = TipoProduto;
+type TipoForm = 'LANCHE' | 'BATATA_FRITA' | 'PORCAO_MISTA';
+
+interface TamanhoForm { tamanho: string; preco: string; }
 
 interface Props {
   produto:    Produto | null;
   categorias: Categoria[];
   adicionais: Adicional[];
-  onSalvar:   (dados: ProdutoPayload) => void;
+  onSalvar:   (dados: any) => void;
   onFechar:   () => void;
 }
 
@@ -37,13 +39,13 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
   const [preco,       setPreco]       = useState(produto?.preco?.toString() ?? '');
   const [categoriaId, setCategoriaId] = useState(produto?.categoriaId       ?? '');
   const [disponivel,  setDisponivel]  = useState(produto?.ativo             ?? true);
-  const [tipo, setTipo] = useState<TipoForm>(
-    produto?.tipo ?? 'LANCHE'
+  const [tipo,        setTipo]        = useState<TipoForm>(
+    (produto as any)?.tipo ?? 'LANCHE'
   );
 
   // Tamanhos — usados apenas para BATATA_FRITA e PORCAO_MISTA
   const [tamanhos, setTamanhos] = useState<TamanhoForm[]>(
-    produto?.tamanhos?.map((t: Tamanho) => ({
+    produto?.tamanhos?.map((t: any) => ({
       tamanho: t.tamanho ?? t.nome ?? '',
       preco:   t.preco?.toString() ?? '',
     })) ?? []
@@ -51,8 +53,8 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
 
   // IDs dos adicionais selecionados — compativel com ambos os formatos da API
   const [adicSel, setAdicSel] = useState<string[]>(
-    produto?.adicionaisProduto?.map(ap => ap.adicional.id)
-    ?? produto?.adicionais?.map(a => a.id)
+    produto?.adicionaisProduto?.map((ap: any) => ap.adicional?.id ?? ap.id)
+    ?? produto?.adicionais?.map((a: any) => a.id)
     ?? []
   );
 
@@ -93,7 +95,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
       alert('Batata Frita e Porcao Mista precisam de tamanhos (P, M, G).'); return;
     }
 
-    const payload: ProdutoPayload = {
+    const payload: any = {
       nome:        nome.trim(),
       descricao:   descricao.trim() || null,
       emoji:       emoji.trim()     || null,

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Prisma, Tamanho, StatusPedido } from '@prisma/client';
 import prisma from '../config/prisma';
 import { getIO } from '../config/socket';
 
@@ -7,7 +6,7 @@ import { getIO } from '../config/socket';
 type ItemInput = {
   produtoId:    string;
   quantidade:   number;
-  tamanho?:     Tamanho;
+  tamanho?:     string;
   adicionais?:  string[];
   sabores?:     string[];
   observacoes?: string;
@@ -20,19 +19,13 @@ type CalculoRetorno = {
   saboresData:    { nome: string }[];
 };
 
-// Produto com os tamanhos incluídos — é o shape retornado pela query em `criar`
-type ProdutoComTamanhos = Prisma.ProdutoGetPayload<{ include: { tamanhos: true } }>;
-
-// Formato de cada item já validado, pronto pra entrar no `create` do pedido
-type ItemValidado = Prisma.ItemPedidoCreateWithoutPedidoInput;
-
 // ─────────────────────────────────────────────────────────
 // CALCULAR PREÇO DO ITEM
 // Função interna — não é uma rota. Calcula o preço de cada item
 // levando em conta o tipo do produto (LANCHE, BATATA_FRITA ou PORCAO_MISTA),
 // o tamanho escolhido e os adicionais selecionados.
 // ─────────────────────────────────────────────────────────
-async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): Promise<CalculoRetorno> {
+async function calcularPrecoItem(produto: any, item: ItemInput): Promise<CalculoRetorno> {
   let precoUnit = 0;
   const adicionaisData: { adicionalId: string; preco: number }[] = [];
   const saboresData:    { nome: string }[] = [];
@@ -54,10 +47,8 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
   }
 
   else if (produto.tipo === 'BATATA_FRITA') {
-    if (!item.tamanho) throw new Error('Tamanho não informado!');
-
     // Batata frita tem preço por tamanho — P, M ou G
-    const produtoTamanho = produto.tamanhos.find((t) => t.tamanho === item.tamanho);
+    const produtoTamanho = produto.tamanhos.find((t: any) => t.tamanho === item.tamanho);
     if (!produtoTamanho) throw new Error(`Tamanho ${item.tamanho} não encontrado!`);
 
     precoUnit = Number(produtoTamanho.preco);
@@ -66,7 +57,7 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
     if (item.adicionais?.length) {
       for (const id of item.adicionais) {
         const adicionalTamanho = await prisma.adicionalTamanho.findFirst({
-          where: { adicionalId: id, tamanho: item.tamanho },
+          where: { adicionalId: id, tamanho: item.tamanho as any },
         });
         if (adicionalTamanho) {
           const preco = Number(adicionalTamanho.preco);
@@ -78,10 +69,8 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
   }
 
   else if (produto.tipo === 'PORCAO_MISTA') {
-    if (!item.tamanho) throw new Error('Tamanho não informado!');
-
     // Porção mista: preço por tamanho multiplicado pela quantidade de sabores
-    const produtoTamanho = produto.tamanhos.find((t) => t.tamanho === item.tamanho);
+    const produtoTamanho = produto.tamanhos.find((t: any) => t.tamanho === item.tamanho);
     if (!produtoTamanho) throw new Error(`Tamanho ${item.tamanho} não encontrado!`);
 
     const qtdSabores = item.sabores?.length || 1;
@@ -102,7 +91,7 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
 // ─────────────────────────────────────────────────────────
 export async function criar(req: Request, res: Response) {
   try {
-    const usuarioId = req.usuario.id;
+    const usuarioId = (req as any).usuario.id;
     const { nomeCliente, itens, observacoes } = req.body;
 
     // O carrinho não pode estar vazio — sem itens não há pedido
@@ -111,7 +100,7 @@ export async function criar(req: Request, res: Response) {
     }
 
     let valorTotal = 0;
-    const itensValidados: ItemValidado[] = [];
+    const itensValidados: any[] = [];
 
     for (const item of itens as ItemInput[]) {
       const produto = await prisma.produto.findUnique({
@@ -144,7 +133,7 @@ export async function criar(req: Request, res: Response) {
       valorTotal += subtotal;
 
       itensValidados.push({
-        produto:     { connect: { id: item.produtoId } },
+        produtoId:   item.produtoId,
         quantidade,
         precoUnit,
         subtotal,
@@ -157,7 +146,7 @@ export async function criar(req: Request, res: Response) {
 
     const pedido = await prisma.pedido.create({
       data: {
-        usuario: { connect: { id: usuarioId } },
+        usuarioId,
         nomeCliente: nomeCliente || null, // Nome do cliente é opcional
         observacoes: observacoes || null,
         valorTotal,
@@ -191,27 +180,17 @@ export async function criar(req: Request, res: Response) {
 // Aceita filtro por status (ex: ?status=PENDENTE,EM_PREPARO)
 // e limita a quantidade de pedidos retornados (padrão: 50)
 // ─────────────────────────────────────────────────────────
-const STATUS_VALIDOS = Object.values(StatusPedido);
-
 export async function listar(req: Request, res: Response) {
   try {
     const { status, limit = '50' } = req.query;
 
-    // Se vier status na query, filtra — senão retorna todos.
-    // Ignora silenciosamente valores que não batem com o enum, em vez de mandar pro Prisma.
-    const whereStatus: Prisma.PedidoWhereInput = status
-      ? {
-          status: {
-            in: (status as string)
-              .split(',')
-              .map(s => s.trim())
-              .filter((s): s is StatusPedido => STATUS_VALIDOS.includes(s as StatusPedido)),
-          },
-        }
+    // Se vier status na query, filtra — senão retorna todos
+    const whereStatus = status
+      ? { status: { in: (status as string).split(',').map(s => s.trim()) as any } }
       : {};
 
     const pedidos = await prisma.pedido.findMany({
-      where:   whereStatus,
+      where:   { ...whereStatus },
       take:    parseInt(limit as string),
       orderBy: { criadoEm: 'asc' },
       include: {
@@ -271,7 +250,7 @@ export async function buscarPorId(req: Request, res: Response) {
 // ─────────────────────────────────────────────────────────
 
 // Mapa de transições permitidas — cada status só pode ir para determinados destinos
-const transicoesValidas: Record<StatusPedido, StatusPedido[]> = {
+const transicoesValidas: Record<string, string[]> = {
   PENDENTE:   ['EM_PREPARO', 'CANCELADO'],
   EM_PREPARO: ['PRONTO',     'CANCELADO'],
   PRONTO:     ['ENTREGUE'],
@@ -281,14 +260,10 @@ const transicoesValidas: Record<StatusPedido, StatusPedido[]> = {
 
 export async function atualizarStatus(req: Request, res: Response) {
   try {
-    const id = req.params.id as string;
-    const { status } = req.body as { status?: StatusPedido };
+    const id       = req.params.id as string;
+    const { status } = req.body;
 
     if (!status) return res.status(400).json({ erro: 'Status é obrigatório!' });
-
-    if (!STATUS_VALIDOS.includes(status)) {
-      return res.status(400).json({ erro: `Status inválido. Use um de: ${STATUS_VALIDOS.join(', ')}` });
-    }
 
     const pedido = await prisma.pedido.findUnique({ where: { id } });
     if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado!' });
