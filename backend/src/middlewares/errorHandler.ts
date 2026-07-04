@@ -6,10 +6,10 @@ import { Request, Response, NextFunction } from 'express';
 // Captura qualquer erro que escapou dos controllers sem tratamento.
 // 
 export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
+  err:  Error,
+  req:  Request,
+  res:  Response,
+  next: NextFunction
 ) {
   console.error('[ERRO NAO TRATADO]', err);
 
