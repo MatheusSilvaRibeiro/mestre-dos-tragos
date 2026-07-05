@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { flushSync } from 'react-dom';
-import type { AxiosError } from 'axios';
 import { useAuth } from '../context/authContext';
 import api from '../services/api';
 
@@ -18,19 +17,16 @@ export default function Login() {
     e.preventDefault();
     setErro('');
     setLoading(true);
-
     try {
       const res = await api.post('/auth/login', { usuario, senha });
       const { token, funcionario } = res.data;
-
+      // flushSync garante que o contexto e atualizado antes da navegacao
       flushSync(() => login(token, funcionario));
-
-      if (funcionario.role === 'ADMIN') navigate('/selecionar', { replace: true });
-      else if (funcionario.role === 'COZINHA') navigate('/cozinha', { replace: true });
-      else navigate('/atendente', { replace: true });
-    } catch (err) {
-      const erroApi = err as AxiosError<{ erro?: string }>;
-      setErro(erroApi.response?.data?.erro || 'Usuario ou senha invalidos.');
+      if      (funcionario.role === 'ADMIN')   navigate('/selecionar', { replace: true });
+      else if (funcionario.role === 'COZINHA') navigate('/cozinha',    { replace: true });
+      else                                     navigate('/atendente',  { replace: true });
+    } catch (err: any) {
+      setErro(err?.response?.data?.erro || 'Usuario ou senha invalidos.');
     } finally {
       setLoading(false);
     }
@@ -38,6 +34,8 @@ export default function Login() {
 
   return (
     <div style={{ height: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+
+      {/* LADO ESQUERDO — BRANDING */}
       <div style={{
         background:     'linear-gradient(160deg, #111827 0%, #0b0e18 60%, rgba(245,158,11,0.06) 100%)',
         borderRight:    '1px solid var(--border-color)',
@@ -48,6 +46,7 @@ export default function Login() {
         padding:        '3rem',
         gap:            '2rem',
       }}>
+        {/* Logo */}
         <div style={{ width: 80, height: 80, background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', borderRadius: 'var(--radius-xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
           🍺
         </div>
@@ -62,6 +61,7 @@ export default function Login() {
           </p>
         </div>
 
+        {/* Features destacadas */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
           {[
             { emoji: '🧾', text: 'Gestao de pedidos em tempo real' },
@@ -78,8 +78,10 @@ export default function Login() {
         </div>
       </div>
 
+      {/* LADO DIREITO — FORMULARIO */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--bg-base)' }}>
         <div style={{ width: '100%', maxWidth: 380, animation: 'fadeIn 0.3s ease' }}>
+
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.375rem' }}>
               Bem-vindo de volta
@@ -91,6 +93,7 @@ export default function Login() {
 
           <div className="surface-elevated" style={{ padding: '1.75rem' }}>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+
               <div className="input-wrapper">
                 <label className="input-label">Usuario</label>
                 <div className="input-icon-wrapper">
@@ -114,8 +117,8 @@ export default function Login() {
                   <span className="input-icon">🔑</span>
                   <input
                     type="password"
-                    className="input-field"
-                    placeholder="Digite sua senha"
+                    className="input-field has-icon"
+                    placeholder="••••••••"
                     value={senha}
                     onChange={e => setSenha(e.target.value)}
                     required
@@ -124,6 +127,7 @@ export default function Login() {
                 </div>
               </div>
 
+              {/* Mensagem de erro — visivel apenas quando houver falha no login */}
               {erro && (
                 <div className="alert alert-error">
                   <span>⚠️</span> {erro}
