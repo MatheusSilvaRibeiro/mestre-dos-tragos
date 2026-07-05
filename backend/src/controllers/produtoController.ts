@@ -1,77 +1,87 @@
 import { Request, Response } from 'express';
+import { Prisma, Tamanho, TipoProduto } from '@prisma/client';
 import prisma from '../config/prisma';
 
-// 
-// LISTAR PRODUTOS — GET /api/produtos
-// Suporta filtros opcionais por categoria e disponibilidade.
-// Os disponíveis sempre aparecem primeiro — facilita na hora de montar o pedido.
-// 
+interface TamanhoPayload {
+  tamanho: Tamanho;
+  preco: number | string;
+}
+
+interface ProdutoBody {
+  nome?: string;
+  descricao?: string | null;
+  emoji?: string | null;
+  preco?: number | string;
+  categoriaId?: string;
+  disponivel?: boolean;
+  tipo?: TipoProduto;
+  tamanhos?: TamanhoPayload[];
+  adicionaisIds?: string[];
+}
+
+// Evita repetir o mesmo include gigante em 4 handlers diferentes
+const produtoInclude = {
+  categoria: { select: { id: true, nome: true } },
+  tamanhos: { orderBy: { tamanho: 'asc' as const } },
+  adicionaisProduto: {
+    include: {
+      adicional: {
+        include: {
+          precoPorTamanho: { orderBy: { tamanho: 'asc' as const } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.ProdutoInclude;
+
+const TIPOS_VALIDOS: TipoProduto[] = ['LANCHE', 'BATATA_FRITA', 'PORCAO_MISTA'];
+const TAMANHOS_VALIDOS: Tamanho[] = ['P', 'M', 'G'];
+
+// Number(preco) não distingue "veio inválido" de "é zero" — isso resolve
+function parsePreco(valor: number | string | undefined): number | null {
+  if (valor === undefined || valor === null || valor === '') return null;
+  const n = Number(valor);
+  if (Number.isNaN(n) || n < 0) return null;
+  return n;
+}
+
 export async function listar(req: Request, res: Response) {
   try {
     const { categoriaId, apenasDisponiveis } = req.query;
 
-    // Começa filtrando só os produtos ativos — inativados não aparecem no cardápio
-    const where: any = { ativo: true };
+    const where: Prisma.ProdutoWhereInput = { ativo: true };
 
     if (apenasDisponiveis === 'true') {
       where.disponivel = true;
     }
 
-    if (categoriaId) {
-      where.categoriaId = categoriaId as string;
+    if (typeof categoriaId === 'string') {
+      where.categoriaId = categoriaId;
     }
 
     const produtos = await prisma.produto.findMany({
       where,
-      include: {
-        categoria: { select: { id: true, nome: true } },
-        tamanhos:  { orderBy: { tamanho: 'asc' } },
-        // Traz os adicionais vinculados ao produto com seus preços por tamanho
-        adicionaisProduto: {
-          include: {
-            adicional: {
-              include: {
-                precoPorTamanho: { orderBy: { tamanho: 'asc' } },
-              },
-            },
-          },
-        },
-      },
+      include: produtoInclude,
       orderBy: [
-        { disponivel: 'desc' }, // Disponíveis primeiro
+        { disponivel: 'desc' },
         { nome: 'asc' },
       ],
     });
 
     return res.json(produtos);
   } catch (error) {
+    console.error('[produto.listar]', error);
     return res.status(500).json({ erro: 'Erro ao listar produtos' });
   }
 }
 
-// 
-// BUSCAR PRODUTO POR ID — GET /api/produtos/:id
-// Retorna todos os detalhes do produto, incluindo tamanhos e adicionais
-// 
 export async function buscarPorId(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
 
     const produto = await prisma.produto.findUnique({
       where: { id },
-      include: {
-        categoria: { select: { id: true, nome: true } },
-        tamanhos:  { orderBy: { tamanho: 'asc' } },
-        adicionaisProduto: {
-          include: {
-            adicional: {
-              include: {
-                precoPorTamanho: { orderBy: { tamanho: 'asc' } },
-              },
-            },
-          },
-        },
-      },
+      include: produtoInclude,
     });
 
     if (!produto) {
@@ -80,220 +90,258 @@ export async function buscarPorId(req: Request, res: Response) {
 
     return res.json(produto);
   } catch (error) {
+    console.error('[produto.buscarPorId]', error);
     return res.status(500).json({ erro: 'Erro ao buscar produto' });
   }
 }
 
-// 
-// CRIAR PRODUTO — POST /api/produtos
-// Só ADMIN pode criar. As regras variam por tipo de produto:
-// - LANCHE → precisa de preço fixo
-// - BATATA_FRITA / PORCAO_MISTA → precisa de tamanhos (P, M, G) com preços
-// 
 export async function criar(req: Request, res: Response) {
   try {
-    const { nome, descricao, emoji, preco, categoriaId, disponivel, tipo, tamanhos, adicionaisIds } = req.body;
+    const {
+      nome,
+      descricao,
+      emoji,
+      preco,
+      categoriaId,
+      disponivel,
+      tipo,
+      tamanhos,
+      adicionaisIds,
+    } = req.body as ProdutoBody;
 
-    // Valida os campos mínimos antes de qualquer operação no banco
     if (!nome || !categoriaId || !tipo) {
       return res.status(400).json({ erro: 'Campos obrigatórios: nome, categoriaId, tipo' });
     }
 
-    // Lanche tem preço único — sem preco não tem como cadastrar
-    if (tipo === 'LANCHE' && !preco) {
-      return res.status(400).json({ erro: 'LANCHE precisa de preco!' });
+    if (!TIPOS_VALIDOS.includes(tipo)) {
+      return res.status(400).json({ erro: `Tipo inválido. Use um de: ${TIPOS_VALIDOS.join(', ')}` });
     }
 
-    // Batata e porção mista variam por tamanho — sem tamanhos não tem como precificar
-    if ((tipo === 'BATATA_FRITA' || tipo === 'PORCAO_MISTA') && (!tamanhos || tamanhos.length === 0)) {
-      return res.status(400).json({ erro: `${tipo} precisa de tamanhos (P, M, G) com preços!` });
+    if (tipo === 'LANCHE') {
+      const precoValido = parsePreco(preco);
+      if (precoValido === null) {
+        return res.status(400).json({ erro: 'LANCHE precisa de um preço válido (número >= 0)!' });
+      }
     }
 
-    // Garante que a categoria existe antes de criar o produto
-    const categoriaExiste = await prisma.categoria.findUnique({ where: { id: categoriaId } });
+    if (tipo === 'BATATA_FRITA' || tipo === 'PORCAO_MISTA') {
+      if (!tamanhos || tamanhos.length === 0) {
+        return res.status(400).json({ erro: `${tipo} precisa de tamanhos (P, M, G) com preços!` });
+      }
+
+      for (const t of tamanhos) {
+        if (!TAMANHOS_VALIDOS.includes(t.tamanho)) {
+          return res.status(400).json({ erro: `Tamanho inválido: ${t.tamanho}. Use P, M ou G.` });
+        }
+        if (parsePreco(t.preco) === null) {
+          return res.status(400).json({ erro: `Preço inválido para o tamanho ${t.tamanho}` });
+        }
+      }
+    }
+
+    const categoriaExiste = await prisma.categoria.findUnique({
+      where: { id: categoriaId },
+    });
+
     if (!categoriaExiste) {
       return res.status(400).json({ erro: 'Categoria não encontrada!' });
     }
 
-    const produto = await prisma.produto.create({
-      data: {
-        nome,
-        descricao,
-        emoji:      emoji ?? null,
-        preco:      Number(preco || 0),
-        categoriaId,
-        disponivel: disponivel ?? true, // Novo produto já nasce disponível por padrão
-        tipo,
-        // Se vieram tamanhos, cria tudo junto numa única operação
-        ...(tamanhos?.length > 0 && {
-          tamanhos: {
-            create: tamanhos.map((t: any) => ({
-              tamanho: t.tamanho,
-              preco:   Number(t.preco),
-            })),
-          },
-        }),
-        // Vincula os adicionais pré-selecionados para esse produto
-        ...(adicionaisIds?.length > 0 && {
-          adicionaisProduto: {
-            create: adicionaisIds.map((adicionalId: string) => ({ adicionalId })),
-          },
-        }),
+    const data: Prisma.ProdutoCreateInput = {
+      nome,
+      descricao: descricao ?? null,
+      emoji: emoji ?? null,
+      preco: parsePreco(preco) ?? 0,
+      categoria: {
+        connect: { id: categoriaId },
       },
-      include: {
-        categoria: { select: { id: true, nome: true } },
-        tamanhos:  { orderBy: { tamanho: 'asc' } },
-        adicionaisProduto: {
-          include: {
-            adicional: {
-              include: {
-                precoPorTamanho: { orderBy: { tamanho: 'asc' } },
-              },
+      disponivel: disponivel ?? true,
+      tipo,
+      ...(tamanhos && tamanhos.length > 0
+        ? {
+            tamanhos: {
+              create: tamanhos.map((t) => ({
+                tamanho: t.tamanho,
+                preco: parsePreco(t.preco) ?? 0,
+              })),
             },
-          },
-        },
-      },
+          }
+        : {}),
+      ...(adicionaisIds && adicionaisIds.length > 0
+        ? {
+            adicionaisProduto: {
+              create: adicionaisIds.map((adicionalId) => ({
+                adicional: {
+                  connect: { id: adicionalId },
+                },
+              })),
+            },
+          }
+        : {}),
+    };
+
+    const produto = await prisma.produto.create({
+      data,
+      include: produtoInclude,
     });
 
     return res.status(201).json({ mensagem: 'Produto criado com sucesso!', produto });
   } catch (error) {
-    console.error(error);
+    console.error('[produto.criar]', error);
     return res.status(500).json({ erro: 'Erro ao criar produto' });
   }
 }
 
-// 
-// EDITAR PRODUTO — PUT /api/produtos/:id
-// Só ADMIN pode editar. Todos os campos são opcionais.
-// Tamanhos e adicionais são substituídos por completo quando enviados.
-// 
 export async function editar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { nome, descricao, emoji, preco, categoriaId, disponivel, tamanhos, adicionaisIds } = req.body;
 
-    // Verifica se o produto existe antes de tentar editar
+    const {
+      nome,
+      descricao,
+      emoji,
+      preco,
+      categoriaId,
+      disponivel,
+      tamanhos,
+      adicionaisIds,
+    } = req.body as ProdutoBody;
+
     const existe = await prisma.produto.findUnique({ where: { id } });
+
     if (!existe) {
       return res.status(404).json({ erro: 'Produto não encontrado!' });
     }
 
-    // Se vier uma nova categoria, valida antes de aceitar
     if (categoriaId) {
-      const categoriaExiste = await prisma.categoria.findUnique({ where: { id: categoriaId } });
+      const categoriaExiste = await prisma.categoria.findUnique({
+        where: { id: categoriaId },
+      });
+
       if (!categoriaExiste) {
         return res.status(400).json({ erro: 'Categoria não encontrada!' });
       }
     }
 
+    if (preco !== undefined && parsePreco(preco) === null) {
+      return res.status(400).json({ erro: 'Preço inválido!' });
+    }
+
+    if (tamanhos) {
+      for (const t of tamanhos) {
+        if (!TAMANHOS_VALIDOS.includes(t.tamanho)) {
+          return res.status(400).json({ erro: `Tamanho inválido: ${t.tamanho}. Use P, M ou G.` });
+        }
+        if (parsePreco(t.preco) === null) {
+          return res.status(400).json({ erro: `Preço inválido para o tamanho ${t.tamanho}` });
+        }
+      }
+    }
+
+    const data: Prisma.ProdutoUpdateInput = {
+      ...(nome !== undefined ? { nome } : {}),
+      ...(descricao !== undefined ? { descricao } : {}),
+      ...(emoji !== undefined ? { emoji } : {}),
+      ...(preco !== undefined ? { preco: parsePreco(preco) ?? 0 } : {}),
+      ...(categoriaId !== undefined
+        ? {
+            categoria: {
+              connect: { id: categoriaId },
+            },
+          }
+        : {}),
+      ...(disponivel !== undefined ? { disponivel } : {}),
+      // Nota: se "tamanhos" vier como array vazio [], isso NÃO limpa os tamanhos
+      // existentes (fica do jeito que estava). Se quiser permitir limpar tudo,
+      // troque a condição por `tamanhos !== undefined`.
+      ...(tamanhos && tamanhos.length > 0
+        ? {
+            tamanhos: {
+              deleteMany: {},
+              create: tamanhos.map((t) => ({
+                tamanho: t.tamanho,
+                preco: parsePreco(t.preco) ?? 0,
+              })),
+            },
+          }
+        : {}),
+      ...(adicionaisIds
+        ? {
+            adicionaisProduto: {
+              deleteMany: {},
+              create: adicionaisIds.map((adicionalId) => ({
+                adicional: {
+                  connect: { id: adicionalId },
+                },
+              })),
+            },
+          }
+        : {}),
+    };
+
     const produtoAtualizado = await prisma.produto.update({
       where: { id },
-      data: {
-        // Só atualiza o que foi enviado — campos ausentes ficam intactos
-        ...(nome                     && { nome }),
-        ...(descricao !== undefined  && { descricao }),
-        ...(emoji     !== undefined  && { emoji }),
-        ...(preco                    && { preco: Number(preco) }),
-        ...(categoriaId              && { categoriaId }),
-        ...(disponivel !== undefined && { disponivel }),
-        // Estratégia deleteMany + create: substitui todos os tamanhos antigos pelos novos
-        ...(tamanhos?.length > 0 && {
-          tamanhos: {
-            deleteMany: {},
-            create: tamanhos.map((t: any) => ({
-              tamanho: t.tamanho,
-              preco:   Number(t.preco),
-            })),
-          },
-        }),
-        // Mesmo esquema para os adicionais vinculados
-        ...(adicionaisIds && {
-          adicionaisProduto: {
-            deleteMany: {},
-            create: adicionaisIds.map((adicionalId: string) => ({ adicionalId })),
-          },
-        }),
-      },
-      include: {
-        categoria: { select: { id: true, nome: true } },
-        tamanhos:  { orderBy: { tamanho: 'asc' } },
-        adicionaisProduto: {
-          include: {
-            adicional: {
-              include: {
-                precoPorTamanho: { orderBy: { tamanho: 'asc' } },
-              },
-            },
-          },
-        },
-      },
+      data,
+      include: produtoInclude,
     });
 
     return res.json({ mensagem: 'Produto atualizado com sucesso!', produto: produtoAtualizado });
   } catch (error) {
-    console.error(error);
+    console.error('[produto.editar]', error);
     return res.status(500).json({ erro: 'Erro ao editar produto' });
   }
 }
 
-// 
-// ALTERNAR DISPONIBILIDADE — PATCH /api/produtos/:id/disponibilidade
-// Cozinha e Admin podem usar isso. Útil quando acaba um ingrediente
-// e precisa tirar o produto do ar rapidinho sem desativar de vez.
-// 
 export async function alternarDisponibilidade(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
 
     const produto = await prisma.produto.findUnique({ where: { id } });
+
     if (!produto) {
       return res.status(404).json({ erro: 'Produto não encontrado!' });
     }
 
-    // Produto inativo não pode voltar a ficar disponível — precisa ser reativado antes
     if (!produto.ativo) {
       return res.status(400).json({ erro: 'Produto inativo não pode ter disponibilidade alterada!' });
     }
 
-    // Inverte o estado atual — se estava disponível fica indisponível e vice-versa
     const produtoAtualizado = await prisma.produto.update({
       where: { id },
-      data:  { disponivel: !produto.disponivel },
+      data: { disponivel: !produto.disponivel },
       select: { id: true, nome: true, disponivel: true },
     });
 
     return res.json({
       mensagem: produtoAtualizado.disponivel
-        ? ` ${produtoAtualizado.nome} está DISPONÍVEL!`
-        : ` ${produtoAtualizado.nome} está INDISPONÍVEL!`,
+        ? `${produtoAtualizado.nome} está DISPONÍVEL!`
+        : `${produtoAtualizado.nome} está INDISPONÍVEL!`,
       produto: produtoAtualizado,
     });
   } catch (error) {
+    console.error('[produto.alternarDisponibilidade]', error);
     return res.status(500).json({ erro: 'Erro ao alterar disponibilidade' });
   }
 }
 
-// 
-// DESATIVAR PRODUTO — DELETE /api/produtos/:id
-// Não deleta do banco — marca como inativo.
-// Isso preserva o histórico de pedidos que usaram esse produto.
-// 
 export async function desativar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
 
     const existe = await prisma.produto.findUnique({ where: { id } });
+
     if (!existe) {
       return res.status(404).json({ erro: 'Produto não encontrado!' });
     }
 
     await prisma.produto.update({
       where: { id },
-      data:  { ativo: false },
+      data: { ativo: false },
     });
 
     return res.json({ mensagem: 'Produto desativado com sucesso!' });
   } catch (error) {
+    console.error('[produto.desativar]', error);
     return res.status(500).json({ erro: 'Erro ao desativar produto' });
   }
 }
