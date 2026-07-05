@@ -14,7 +14,7 @@ export async function metricasHoje(req: Request, res: Response) {
   try {
     const data = await getMetricasHoje();
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Erro ao buscar métricas do dia.' });
   }
 }
@@ -27,7 +27,7 @@ export async function resumoGeral(req: Request, res: Response) {
   try {
     const data = await getResumoGeral();
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Erro ao buscar resumo geral.' });
   }
 }
@@ -40,7 +40,7 @@ export async function topProdutos(req: Request, res: Response) {
   try {
     const data = await getTopProdutos();
     res.json(data);
-  } catch (err) {
+  } catch  {
     res.status(500).json({ error: 'Erro ao buscar top produtos.' });
   }
 }
@@ -60,7 +60,7 @@ export async function faturamentoPeriodo(req: Request, res: Response) {
   try {
     const data = await getFaturamentoPeriodo(periodo as '7d' | '30d' | '90d');
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Erro ao buscar faturamento por período.' });
   }
 }
