@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>41/41</span>
+                <span class='fraction'>43/43</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>41/41</span>
+                <span class='fraction'>43/43</span>
             </div>
         
             
@@ -197,7 +197,11 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -225,10 +229,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -250,6 +250,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -263,10 +267,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -285,6 +285,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -332,7 +336,9 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import prisma from '../config/prisma';
+import { categoriaSchema } from '../validators/categoriaSchemas';
 &nbsp;
 // 
 // LISTAR CATEGORIAS
@@ -358,11 +364,7 @@ export async function listar(req: Request, res: Response) {
 &nbsp;
 export async function criar(req: Request, res: Response) {
   try {
-    const { nome } = req.body;
-&nbsp;
-    if (!nome) {
-      return res.status(400).json({ erro: 'Nome é obrigatório!' });
-    }
+    const { nome } = categoriaSchema.parse(req.body);
 &nbsp;
     const existe = await prisma.categoria.findUnique({
       where: { nome }
@@ -383,7 +385,11 @@ export async function criar(req: Request, res: Response) {
       categoria
     });
 &nbsp;
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+&nbsp;
     return res.status(500).json({ erro: 'Erro ao criar categoria' });
   }
 }
@@ -396,11 +402,7 @@ export async function editar(req: Request, res: Response) {
   try {
     //  "as string" → garante pro TypeScript que é uma string
     const id = req.params.id as string;
-    const { nome } = req.body;
-&nbsp;
-    if (!nome) {
-      return res.status(400).json({ erro: 'Nome é obrigatório!' });
-    }
+    const { nome } = categoriaSchema.parse(req.body);
 &nbsp;
     const existe = await prisma.categoria.findUnique({
       where: { id }
@@ -420,7 +422,11 @@ export async function editar(req: Request, res: Response) {
       categoria: categoriaAtualizada
     });
 &nbsp;
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+&nbsp;
     return res.status(500).json({ erro: 'Erro ao editar categoria' });
   }
 }
@@ -472,7 +478,7 @@ export async function desativar(req: Request, res: Response) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-06T19:28:25.667Z
+                at 2026-07-06T20:37:54.322Z
             </div>
         <script src="../prettify.js"></script>
         <script>

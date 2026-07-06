@@ -1,23 +1,8 @@
 import { Request, Response } from 'express';
 import { Prisma, Tamanho, TipoProduto } from '@prisma/client';
+import { ZodError } from 'zod';
 import prisma from '../config/prisma';
-
-interface TamanhoPayload {
-  tamanho: Tamanho;
-  preco: number | string;
-}
-
-interface ProdutoBody {
-  nome?: string;
-  descricao?: string | null;
-  emoji?: string | null;
-  preco?: number | string;
-  categoriaId?: string;
-  disponivel?: boolean;
-  tipo?: TipoProduto;
-  tamanhos?: TamanhoPayload[];
-  adicionaisIds?: string[];
-}
+import { criarProdutoSchema, editarProdutoSchema, parsePreco } from '../validators/produtoSchemas';
 
 // Evita repetir o mesmo include gigante em 4 handlers diferentes
 const produtoInclude = {
@@ -33,17 +18,6 @@ const produtoInclude = {
     },
   },
 } satisfies Prisma.ProdutoInclude;
-
-const TIPOS_VALIDOS: TipoProduto[] = ['LANCHE', 'BATATA_FRITA', 'PORCAO_MISTA'];
-const TAMANHOS_VALIDOS: Tamanho[] = ['P', 'M', 'G'];
-
-// Number(preco) não distingue "veio inválido" de "é zero" — isso resolve
-function parsePreco(valor: number | string | undefined): number | null {
-  if (valor === undefined || valor === null || valor === '') return null;
-  const n = Number(valor);
-  if (Number.isNaN(n) || n < 0) return null;
-  return n;
-}
 
 export async function listar(req: Request, res: Response) {
   try {
@@ -107,40 +81,10 @@ export async function criar(req: Request, res: Response) {
       tipo,
       tamanhos,
       adicionaisIds,
-    } = req.body as ProdutoBody;
-
-    if (!nome || !categoriaId || !tipo) {
-      return res.status(400).json({ erro: 'Campos obrigatórios: nome, categoriaId, tipo' });
-    }
-
-    if (!TIPOS_VALIDOS.includes(tipo)) {
-      return res.status(400).json({ erro: `Tipo inválido. Use um de: ${TIPOS_VALIDOS.join(', ')}` });
-    }
-
-    if (tipo === 'LANCHE') {
-      const precoValido = parsePreco(preco);
-      if (precoValido === null) {
-        return res.status(400).json({ erro: 'LANCHE precisa de um preço válido (número >= 0)!' });
-      }
-    }
-
-    if (tipo === 'BATATA_FRITA' || tipo === 'PORCAO_MISTA') {
-      if (!tamanhos || tamanhos.length === 0) {
-        return res.status(400).json({ erro: `${tipo} precisa de tamanhos (P, M, G) com preços!` });
-      }
-
-      for (const t of tamanhos) {
-        if (!TAMANHOS_VALIDOS.includes(t.tamanho)) {
-          return res.status(400).json({ erro: `Tamanho inválido: ${t.tamanho}. Use P, M ou G.` });
-        }
-        if (parsePreco(t.preco) === null) {
-          return res.status(400).json({ erro: `Preço inválido para o tamanho ${t.tamanho}` });
-        }
-      }
-    }
+    } = criarProdutoSchema.parse(req.body);
 
     const categoriaExiste = await prisma.categoria.findUnique({
-      where: { id: categoriaId },
+      where: { id: categoriaId as string },
     });
 
     if (!categoriaExiste) {
@@ -148,20 +92,20 @@ export async function criar(req: Request, res: Response) {
     }
 
     const data: Prisma.ProdutoCreateInput = {
-      nome,
+      nome: nome as string,
       descricao: descricao ?? null,
       emoji: emoji ?? null,
       preco: parsePreco(preco) ?? 0,
       categoria: {
-        connect: { id: categoriaId },
+        connect: { id: categoriaId as string },
       },
       disponivel: disponivel ?? true,
-      tipo,
+      tipo: tipo as TipoProduto,
       ...(tamanhos && tamanhos.length > 0
         ? {
             tamanhos: {
               create: tamanhos.map((t) => ({
-                tamanho: t.tamanho,
+                tamanho: t.tamanho as Tamanho,
                 preco: parsePreco(t.preco) ?? 0,
               })),
             },
@@ -187,6 +131,10 @@ export async function criar(req: Request, res: Response) {
 
     return res.status(201).json({ mensagem: 'Produto criado com sucesso!', produto });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     console.error('[produto.criar]', error);
     return res.status(500).json({ erro: 'Erro ao criar produto' });
   }
@@ -205,7 +153,7 @@ export async function editar(req: Request, res: Response) {
       disponivel,
       tamanhos,
       adicionaisIds,
-    } = req.body as ProdutoBody;
+    } = editarProdutoSchema.parse(req.body);
 
     const existe = await prisma.produto.findUnique({ where: { id } });
 
@@ -220,21 +168,6 @@ export async function editar(req: Request, res: Response) {
 
       if (!categoriaExiste) {
         return res.status(400).json({ erro: 'Categoria não encontrada!' });
-      }
-    }
-
-    if (preco !== undefined && parsePreco(preco) === null) {
-      return res.status(400).json({ erro: 'Preço inválido!' });
-    }
-
-    if (tamanhos) {
-      for (const t of tamanhos) {
-        if (!TAMANHOS_VALIDOS.includes(t.tamanho)) {
-          return res.status(400).json({ erro: `Tamanho inválido: ${t.tamanho}. Use P, M ou G.` });
-        }
-        if (parsePreco(t.preco) === null) {
-          return res.status(400).json({ erro: `Preço inválido para o tamanho ${t.tamanho}` });
-        }
       }
     }
 
@@ -259,7 +192,7 @@ export async function editar(req: Request, res: Response) {
             tamanhos: {
               deleteMany: {},
               create: tamanhos.map((t) => ({
-                tamanho: t.tamanho,
+                tamanho: t.tamanho as Tamanho,
                 preco: parsePreco(t.preco) ?? 0,
               })),
             },
@@ -287,6 +220,10 @@ export async function editar(req: Request, res: Response) {
 
     return res.json({ mensagem: 'Produto atualizado com sucesso!', produto: produtoAtualizado });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     console.error('[produto.editar]', error);
     return res.status(500).json({ erro: 'Erro ao editar produto' });
   }

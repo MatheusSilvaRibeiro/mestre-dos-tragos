@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { Prisma, Tamanho, StatusPedido } from '@prisma/client';
+import { ZodError } from 'zod';
 import prisma from '../config/prisma';
 import { getIO } from '../config/socket';
+import { criarPedidoSchema, atualizarStatusSchema } from '../validators/pedidoSchemas';
 
 // Tipos que definem o formato esperado de cada item do pedido
 type ItemInput = {
   produtoId:    string;
-  quantidade:   number;
-  tamanho?:     Tamanho;
+  quantidade:   number | string;
+  tamanho?:     string;
   adicionais?:  string[];
   sabores?:     string[];
   observacoes?: string;
@@ -26,19 +28,12 @@ type ProdutoComTamanhos = Prisma.ProdutoGetPayload<{ include: { tamanhos: true }
 // Formato de cada item já validado, pronto pra entrar no `create` do pedido
 type ItemValidado = Prisma.ItemPedidoCreateWithoutPedidoInput;
 
-// ─────────────────────────────────────────────────────────
-// CALCULAR PREÇO DO ITEM
-// Função interna — não é uma rota. Calcula o preço de cada item
-// levando em conta o tipo do produto (LANCHE, BATATA_FRITA ou PORCAO_MISTA),
-// o tamanho escolhido e os adicionais selecionados.
-// ─────────────────────────────────────────────────────────
 async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): Promise<CalculoRetorno> {
   let precoUnit = 0;
   const adicionaisData: { adicionalId: string; preco: number }[] = [];
   const saboresData:    { nome: string }[] = [];
 
   if (produto.tipo === 'LANCHE') {
-    // Lanche tem preço fixo — adicionais somam em cima do preço base
     precoUnit = Number(produto.preco);
 
     if (item.adicionais?.length) {
@@ -56,17 +51,15 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
   else if (produto.tipo === 'BATATA_FRITA') {
     if (!item.tamanho) throw new Error('Tamanho não informado!');
 
-    // Batata frita tem preço por tamanho — P, M ou G
     const produtoTamanho = produto.tamanhos.find((t) => t.tamanho === item.tamanho);
     if (!produtoTamanho) throw new Error(`Tamanho ${item.tamanho} não encontrado!`);
 
     precoUnit = Number(produtoTamanho.preco);
 
-    // Os adicionais da batata também variam por tamanho
     if (item.adicionais?.length) {
       for (const id of item.adicionais) {
         const adicionalTamanho = await prisma.adicionalTamanho.findFirst({
-          where: { adicionalId: id, tamanho: item.tamanho },
+          where: { adicionalId: id, tamanho: item.tamanho as Tamanho },
         });
         if (adicionalTamanho) {
           const preco = Number(adicionalTamanho.preco);
@@ -80,7 +73,6 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
   else if (produto.tipo === 'PORCAO_MISTA') {
     if (!item.tamanho) throw new Error('Tamanho não informado!');
 
-    // Porção mista: preço por tamanho multiplicado pela quantidade de sabores
     const produtoTamanho = produto.tamanhos.find((t) => t.tamanho === item.tamanho);
     if (!produtoTamanho) throw new Error(`Tamanho ${item.tamanho} não encontrado!`);
 
@@ -95,20 +87,10 @@ async function calcularPrecoItem(produto: ProdutoComTamanhos, item: ItemInput): 
   return { precoUnit, adicionaisData, saboresData };
 }
 
-// ─────────────────────────────────────────────────────────
-// CRIAR PEDIDO — POST /api/pedidos
-// Valida cada item do carrinho, calcula os preços e registra o pedido.
-// Depois emite um evento via Socket.IO pra cozinha receber em tempo real.
-// ─────────────────────────────────────────────────────────
 export async function criar(req: Request, res: Response) {
   try {
     const usuarioId = req.usuario.id;
-    const { nomeCliente, itens, observacoes } = req.body;
-
-    // O carrinho não pode estar vazio — sem itens não há pedido
-    if (!Array.isArray(itens) || itens.length === 0) {
-      return res.status(400).json({ erro: 'Pedido precisa ter pelo menos 1 item!' });
-    }
+    const { nomeCliente, itens, observacoes } = criarPedidoSchema.parse(req.body);
 
     let valorTotal = 0;
     const itensValidados: ItemValidado[] = [];
@@ -123,12 +105,10 @@ export async function criar(req: Request, res: Response) {
         return res.status(400).json({ erro: `Produto não encontrado: ${item.produtoId}` });
       }
 
-      // Não deixa vender produto que está indisponível ou inativo no cardápio
       if (!produto.disponivel || !produto.ativo) {
         return res.status(400).json({ erro: `Produto indisponível ou inativo: ${produto.nome}` });
       }
 
-      // Batata frita e porção mista obrigatoriamente precisam de tamanho
       if ((produto.tipo === 'BATATA_FRITA' || produto.tipo === 'PORCAO_MISTA') && !item.tamanho) {
         return res.status(400).json({ erro: `Tamanho obrigatório para ${produto.nome}! Use: P, M ou G` });
       }
@@ -136,10 +116,6 @@ export async function criar(req: Request, res: Response) {
       const { precoUnit, adicionaisData, saboresData } = await calcularPrecoItem(produto, item);
 
       const quantidade = Number(item.quantidade);
-      if (!quantidade || quantidade <= 0) {
-        return res.status(400).json({ erro: 'Quantidade inválida!' });
-      }
-
       const subtotal = precoUnit * quantidade;
       valorTotal += subtotal;
 
@@ -148,7 +124,7 @@ export async function criar(req: Request, res: Response) {
         quantidade,
         precoUnit,
         subtotal,
-        tamanho:     item.tamanho     || null,
+        tamanho:     (item.tamanho as Tamanho) || null,
         observacoes: item.observacoes || null,
         adicionais:  { create: adicionaisData },
         sabores:     { create: saboresData },
@@ -158,7 +134,7 @@ export async function criar(req: Request, res: Response) {
     const pedido = await prisma.pedido.create({
       data: {
         usuario: { connect: { id: usuarioId } },
-        nomeCliente: nomeCliente || null, // Nome do cliente é opcional
+        nomeCliente: nomeCliente || null,
         observacoes: observacoes || null,
         valorTotal,
         status: 'PENDENTE',
@@ -176,29 +152,25 @@ export async function criar(req: Request, res: Response) {
       },
     });
 
-    // Avisa a cozinha em tempo real que um novo pedido chegou
     getIO().emit('pedido:novo', pedido);
 
     return res.status(201).json({ mensagem: 'Pedido criado com sucesso!', pedido });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     console.error(error);
     return res.status(500).json({ erro: 'Erro ao criar pedido' });
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// LISTAR PEDIDOS — GET /api/pedidos
-// Aceita filtro por status (ex: ?status=PENDENTE,EM_PREPARO)
-// e limita a quantidade de pedidos retornados (padrão: 50)
-// ─────────────────────────────────────────────────────────
 const STATUS_VALIDOS = Object.values(StatusPedido);
 
 export async function listar(req: Request, res: Response) {
   try {
     const { status, limit = '50' } = req.query;
 
-    // Se vier status na query, filtra — senão retorna todos.
-    // Ignora silenciosamente valores que não batem com o enum, em vez de mandar pro Prisma.
     const whereStatus: Prisma.PedidoWhereInput = status
       ? {
           status: {
@@ -233,10 +205,6 @@ export async function listar(req: Request, res: Response) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// BUSCAR POR ID — GET /api/pedidos/:id
-// Retorna todos os detalhes de um pedido específico
-// ─────────────────────────────────────────────────────────
 export async function buscarPorId(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
@@ -264,40 +232,32 @@ export async function buscarPorId(req: Request, res: Response) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// ATUALIZAR STATUS — PATCH /api/pedidos/:id/status
-// Controla o fluxo do pedido. Só permite transições válidas
-// para evitar inconsistências — ex: não dá pra voltar de PRONTO pra PENDENTE.
-// ─────────────────────────────────────────────────────────
-
-// Mapa de transições permitidas — cada status só pode ir para determinados destinos
 const transicoesValidas: Record<StatusPedido, StatusPedido[]> = {
   PENDENTE:   ['EM_PREPARO', 'CANCELADO'],
   EM_PREPARO: ['PRONTO',     'CANCELADO'],
   PRONTO:     ['ENTREGUE'],
-  ENTREGUE:   [], // Pedido entregue é status final — não muda mais
-  CANCELADO:  [], // Pedido cancelado também é final
+  ENTREGUE:   [],
+  CANCELADO:  [],
 };
 
 export async function atualizarStatus(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { status } = req.body as { status?: StatusPedido };
+    const { status } = atualizarStatusSchema.parse(req.body);
 
-    if (!status) return res.status(400).json({ erro: 'Status é obrigatório!' });
-
-    if (!STATUS_VALIDOS.includes(status)) {
+    if (!STATUS_VALIDOS.includes(status as StatusPedido)) {
       return res.status(400).json({ erro: `Status inválido. Use um de: ${STATUS_VALIDOS.join(', ')}` });
     }
+
+    const statusValidado = status as StatusPedido;
 
     const pedido = await prisma.pedido.findUnique({ where: { id } });
     if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado!' });
 
-    // Verifica se a transição é permitida antes de atualizar
     const permitidos = transicoesValidas[pedido.status] || [];
-    if (!permitidos.includes(status)) {
+    if (!permitidos.includes(statusValidado)) {
       return res.status(400).json({
-        erro: `Não é possível mudar de ${pedido.status} para ${status}!`,
+        erro: `Não é possível mudar de ${pedido.status} para ${statusValidado}!`,
         transicoesPermitidas: permitidos,
       });
     }
@@ -305,27 +265,24 @@ export async function atualizarStatus(req: Request, res: Response) {
     const atualizado = await prisma.pedido.update({
       where: { id },
       data: {
-        status,
-        // Registra o horário de entrega quando o pedido é finalizado
-        finalizadoEm: status === 'ENTREGUE' ? new Date() : undefined,
+        status: statusValidado,
+        finalizadoEm: statusValidado === 'ENTREGUE' ? new Date() : undefined,
       },
     });
 
-    // Notifica todos os painéis conectados sobre a mudança de status
     getIO().emit('pedido:atualizado', atualizado);
 
     return res.json({ mensagem: 'Status atualizado!', pedido: atualizado });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     console.error(error);
     return res.status(500).json({ erro: 'Erro ao atualizar status' });
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// CANCELAR PEDIDO — PATCH /api/pedidos/:id/cancelar
-// Só é possível cancelar pedidos PENDENTE ou EM_PREPARO.
-// Pedido PRONTO ou ENTREGUE não pode ser cancelado.
-// ─────────────────────────────────────────────────────────
 export async function cancelar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
@@ -333,7 +290,6 @@ export async function cancelar(req: Request, res: Response) {
     const pedido = await prisma.pedido.findUnique({ where: { id } });
     if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado!' });
 
-    // Não faz sentido cancelar algo que já foi entregue ou que já está pronto
     if (!['PENDENTE', 'EM_PREPARO'].includes(pedido.status)) {
       return res.status(400).json({
         erro: `Não é possível cancelar um pedido com status ${pedido.status}!`,

@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import prisma from '../config/prisma';
-
-interface PrecoPorTamanhoPayload {
-  tamanho: string;
-  preco: number | string;
-}
+import { criarAdicionalSchema, editarAdicionalSchema } from '../validators/adicionalSchemas';
 
 // ─────────────────────────────────────────────────────────
 // LISTAR ADICIONAIS — GET /api/adicionais
@@ -54,11 +51,7 @@ export async function buscarPorId(req: Request, res: Response) {
 // ─────────────────────────────────────────────────────────
 export async function criar(req: Request, res: Response) {
   try {
-    const { nome, preco, precoPorTamanho } = req.body;
-
-    if (!nome || preco === undefined) {
-      return res.status(400).json({ erro: 'Campos obrigatórios: nome, preco' });
-    }
+    const { nome, preco, precoPorTamanho } = criarAdicionalSchema.parse(req.body);
 
     const adicional = await prisma.adicional.create({
       data: {
@@ -66,7 +59,7 @@ export async function criar(req: Request, res: Response) {
         preco: Number(preco),
         ...(precoPorTamanho && precoPorTamanho.length > 0 && {
           precoPorTamanho: {
-            create: precoPorTamanho.map((p: PrecoPorTamanhoPayload) => ({
+            create: precoPorTamanho.map((p) => ({
               tamanho: p.tamanho,
               preco: Number(p.preco),
             })),
@@ -82,7 +75,11 @@ export async function criar(req: Request, res: Response) {
       mensagem: 'Adicional criado com sucesso!',
       adicional,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     return res.status(500).json({ erro: 'Erro ao criar adicional' });
   }
 }
@@ -93,7 +90,7 @@ export async function criar(req: Request, res: Response) {
 export async function editar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { nome, preco, precoPorTamanho } = req.body;
+    const { nome, preco, precoPorTamanho } = editarAdicionalSchema.parse(req.body);
 
     const existe = await prisma.adicional.findUnique({ where: { id } });
     if (!existe) {
@@ -108,7 +105,7 @@ export async function editar(req: Request, res: Response) {
         ...(precoPorTamanho && precoPorTamanho.length > 0 && {
           precoPorTamanho: {
             deleteMany: {},
-            create: precoPorTamanho.map((p: PrecoPorTamanhoPayload) => ({
+            create: precoPorTamanho.map((p) => ({
               tamanho: p.tamanho,
               preco: Number(p.preco),
             })),
@@ -124,7 +121,11 @@ export async function editar(req: Request, res: Response) {
       mensagem: 'Adicional atualizado com sucesso!',
       adicional: adicionalAtualizado,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     return res.status(500).json({ erro: 'Erro ao editar adicional' });
   }
 }

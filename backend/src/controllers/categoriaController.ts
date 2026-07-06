@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import prisma from '../config/prisma';
+import { categoriaSchema } from '../validators/categoriaSchemas';
 
 // 
 // LISTAR CATEGORIAS
@@ -25,11 +27,7 @@ export async function listar(req: Request, res: Response) {
 
 export async function criar(req: Request, res: Response) {
   try {
-    const { nome } = req.body;
-
-    if (!nome) {
-      return res.status(400).json({ erro: 'Nome é obrigatório!' });
-    }
+    const { nome } = categoriaSchema.parse(req.body);
 
     const existe = await prisma.categoria.findUnique({
       where: { nome }
@@ -50,7 +48,11 @@ export async function criar(req: Request, res: Response) {
       categoria
     });
 
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     return res.status(500).json({ erro: 'Erro ao criar categoria' });
   }
 }
@@ -63,11 +65,7 @@ export async function editar(req: Request, res: Response) {
   try {
     //  "as string" → garante pro TypeScript que é uma string
     const id = req.params.id as string;
-    const { nome } = req.body;
-
-    if (!nome) {
-      return res.status(400).json({ erro: 'Nome é obrigatório!' });
-    }
+    const { nome } = categoriaSchema.parse(req.body);
 
     const existe = await prisma.categoria.findUnique({
       where: { id }
@@ -87,7 +85,11 @@ export async function editar(req: Request, res: Response) {
       categoria: categoriaAtualizada
     });
 
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: error.issues[0].message });
+    }
+
     return res.status(500).json({ erro: 'Erro ao editar categoria' });
   }
 }
