@@ -2,6 +2,12 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma';
+import { ZodError } from 'zod';
+import {
+  cadastrarFuncionarioSchema,
+  editarFuncionarioSchema,
+  loginSchema,
+} from '../validators/authSchemas';
 
 // ─────────────────────────────────────────────────────────
 // LISTAR FUNCIONÁRIOS — GET /api/auth/funcionarios
@@ -27,20 +33,13 @@ export async function listarFuncionarios(req: Request, res: Response) {
 // ─────────────────────────────────────────────────────────
 export async function cadastrar(req: Request, res: Response) {
   try {
-    const { usuario, nome, senha, role } = req.body;
+    const { usuario, nome, senha, role } = cadastrarFuncionarioSchema.parse(req.body);
 
-    // Valida os campos antes de bater no banco
-    if (!usuario || !nome || !senha) {
-      return res.status(400).json({ erro: 'Campos obrigatórios: usuario, nome, senha' });
-    }
-
-    // Verifica se já existe um usuário com esse login
     const existe = await prisma.usuario.findUnique({ where: { usuario } });
     if (existe) {
       return res.status(400).json({ erro: 'Usuário já existe!' });
     }
 
-    // Criptografa a senha antes de salvar — nunca salvamos senha em texto puro
     const senhaCriptografada = await bcrypt.hash(senha, 10);
 
     const novo = await prisma.usuario.create({
@@ -48,14 +47,17 @@ export async function cadastrar(req: Request, res: Response) {
         usuario,
         nome,
         senha: senhaCriptografada,
-        // Se não informar o role, assume ATENDENTE como padrão
         role: role || 'ATENDENTE',
       },
       select: { id: true, usuario: true, nome: true, role: true, ativo: true, criadoEm: true },
     });
 
     return res.status(201).json({ mensagem: 'Funcionário cadastrado!', usuario: novo });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: 'Campos obrigatórios: usuario, nome, senha' });
+    }
+
     return res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 }
@@ -67,20 +69,14 @@ export async function cadastrar(req: Request, res: Response) {
 // ─────────────────────────────────────────────────────────
 export async function login(req: Request, res: Response) {
   try {
-    const { usuario, senha } = req.body;
-
-    if (!usuario || !senha) {
-      return res.status(400).json({ erro: 'Informe usuário e senha' });
-    }
+    const { usuario, senha } = loginSchema.parse(req.body);
 
     const funcionario = await prisma.usuario.findUnique({ where: { usuario } });
 
-    // Mensagem genérica proposital — não informamos se o usuário existe ou não
     if (!funcionario) {
       return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
     }
 
-    // Verifica se o funcionário está ativo antes de liberar o acesso
     if (!funcionario.ativo) {
       return res.status(401).json({ erro: 'Usuário desativado.' });
     }
@@ -90,7 +86,6 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
     }
 
-    // Gera o token com duração de 8h — tempo de um turno de trabalho
     const token = jwt.sign(
       { id: funcionario.id, role: funcionario.role },
       process.env.JWT_SECRET || 'secret_padrao',
@@ -107,7 +102,11 @@ export async function login(req: Request, res: Response) {
         role: funcionario.role,
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: 'Informe usuário e senha' });
+    }
+
     return res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 }
@@ -119,18 +118,16 @@ export async function login(req: Request, res: Response) {
 export async function editarFuncionario(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { nome, usuario, role, ativo, senha } = req.body;
+    const { nome, usuario, role, ativo, senha } = editarFuncionarioSchema.parse(req.body);
 
-    // Monta o objeto de atualização com os campos recebidos
     const dados: {
-  nome?: string;
-  usuario?: string;
-  role?: 'ADMIN' | 'ATENDENTE' | 'COZINHA';
-  ativo?: boolean;
-  senha?: string;
-} = { nome, usuario, role, ativo };
+      nome?: string;
+      usuario?: string;
+      role?: 'ADMIN' | 'ATENDENTE' | 'COZINHA';
+      ativo?: boolean;
+      senha?: string;
+    } = { nome, usuario, role, ativo };
 
-    // Se veio uma nova senha, criptografa antes de salvar
     if (senha) {
       dados.senha = await bcrypt.hash(senha, 10);
     }
@@ -142,7 +139,11 @@ export async function editarFuncionario(req: Request, res: Response) {
     });
 
     return res.json({ mensagem: 'Funcionário atualizado!', usuario: atualizado });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ erro: 'Dados inválidos para atualizar funcionário' });
+    }
+
     return res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 }
