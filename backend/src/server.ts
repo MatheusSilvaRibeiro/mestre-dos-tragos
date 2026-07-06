@@ -3,6 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import { createServer } from 'http';
+import helmet from 'helmet';
+import compression from 'compression';
+import swaggerUi from 'swagger-ui-express';
 
 import { initSocket } from './config/socket';
 import prisma from './config/prisma';
@@ -16,9 +19,8 @@ import adicionalRoutes from './routes/adicionalRoutes';
 import relatorioRoutes from './routes/relatorioRoutes';
 import usuarioRoutes from './routes/usuarioRoutes';
 
+import { apiLimiter } from './middlewares/rateLimit';
 import { errorHandler } from './middlewares/errorHandler';
-
-import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
 
 dotenv.config();
@@ -33,28 +35,43 @@ const allowedOrigins = [
   'http://localhost:5173',
 ].filter(Boolean) as string[];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+// Segurança HTTP
+app.use(helmet());
 
-    return callback(new Error('Origem não permitida pelo CORS'));
-  },
-  credentials: true,
-}));
+// CORS
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
+      return callback(new Error('Origem não permitida pelo CORS'));
+    },
+    credentials: true,
+  })
+);
+
+// Compressão
+app.use(compression());
+
+// Rate limit global
+app.use(apiLimiter);
+
+// Parser JSON
 app.use(express.json());
+
+// Documentação da API
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     mensagem: 'API Mestre dos Tragos funcionando!',
     versao: '1.0.0',
   });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'mestre-dos-tragos-api',
@@ -63,7 +80,7 @@ app.get('/health', (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'production') {
-  app.post('/setup', async (req, res) => {
+  app.post('/setup', async (_req, res) => {
     const adminExiste = await prisma.usuario.findFirst({
       where: { role: 'ADMIN' },
     });
@@ -107,5 +124,5 @@ const PORT = process.env.PORT || 3333;
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
   console.log(`Acesse: http://localhost:${PORT}`);
-  console.log(`WebSocket ativo`);
+  console.log('WebSocket ativo');
 });
