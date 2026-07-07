@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { initSocket } from './config/socket';
 import prisma from './config/prisma';
+import { logger } from './config/logger';
 
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import authRoutes from './routes/authRoutes';
@@ -21,6 +22,7 @@ import usuarioRoutes from './routes/usuarioRoutes';
 
 import { apiLimiter } from './middlewares/rateLimit';
 import { errorHandler } from './middlewares/errorHandler';
+import { loggerMiddleware } from './middlewares/logger';
 import { swaggerSpec } from './docs/swagger';
 
 dotenv.config();
@@ -35,10 +37,8 @@ const allowedOrigins = [
   'http://localhost:5173',
 ].filter(Boolean) as string[];
 
-// Segurança HTTP
 app.use(helmet());
 
-// CORS
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -52,16 +52,11 @@ app.use(
   })
 );
 
-// Compressão
 app.use(compression());
-
-// Rate limit global
 app.use(apiLimiter);
-
-// Parser JSON
+app.use(loggerMiddleware);
 app.use(express.json());
 
-// Documentação da API
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/', (_req, res) => {
@@ -71,10 +66,26 @@ app.get('/', (_req, res) => {
   });
 });
 
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'ok',
+app.get('/health', async (_req, res) => {
+  const database = await prisma.usuario
+    .findFirst({
+      select: { id: true },
+    })
+    .then(() => 'connected')
+    .catch(() => 'disconnected');
+
+  return res.json({
+    status: database === 'connected' ? 'ok' : 'degraded',
     service: 'mestre-dos-tragos-api',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: Number(process.uptime().toFixed(2)),
+    database,
+    memory: {
+      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`,
+      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB`,
+      heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB`,
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -122,7 +133,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3333;
 
 server.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Acesse: http://localhost:${PORT}`);
-  console.log('WebSocket ativo');
+  logger.info(`Servidor rodando na porta ${PORT}`);
+  logger.info(`Acesse: http://localhost:${PORT}`);
+  logger.info('WebSocket ativo');
 });
