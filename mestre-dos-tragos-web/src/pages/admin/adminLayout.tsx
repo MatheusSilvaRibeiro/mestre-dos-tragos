@@ -79,6 +79,7 @@ export default function AdminLayout() {
                 key={item.path}
                 to={item.path}
                 end={item.end}
+                data-testid={`sidebar-link-${item.label.toLowerCase()}`}
                 onClick={() => setMobileOpen(false)} // fecha menu ao navegar no mobile
                 className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
               >
@@ -95,6 +96,7 @@ export default function AdminLayout() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                data-testid={`sidebar-link-${item.label.toLowerCase()}`}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
               >
@@ -113,15 +115,15 @@ export default function AdminLayout() {
               {funcionario?.nome?.charAt(0).toUpperCase() ?? 'U'}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p data-testid="sidebar-user-nome" style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {funcionario?.nome}
               </p>
-              <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+              <p data-testid="sidebar-user-role" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
                 {funcionario?.role}
               </p>
             </div>
           </div>
-          <button onClick={handleLogout} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', gap: '0.5rem', fontSize: '0.875rem' }}>
+          <button onClick={handleLogout} data-testid="logout-btn" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', gap: '0.5rem', fontSize: '0.875rem' }}>
             <span>🚪</span> Sair
           </button>
         </div>

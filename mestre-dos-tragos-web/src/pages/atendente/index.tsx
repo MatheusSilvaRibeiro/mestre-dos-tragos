@@ -103,6 +103,7 @@ export default function Atendente() {
           <input
             type="text"
             placeholder="Buscar produto pelo nome..."
+            data-testid="atendente-busca-input"
             value={busca}
             onChange={e => setBusca(e.target.value)}
             className="input-field"
@@ -124,6 +125,7 @@ export default function Atendente() {
           <input
             type="text"
             placeholder="Nome do cliente"
+            data-testid="atendente-cliente-input"
             value={nomeCliente}
             onChange={e => setNomeCliente(e.target.value)}
             className="input-field"

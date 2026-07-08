@@ -81,13 +81,13 @@ export default function Cozinha() {
   const emPreparo = pedidos.filter(p => p.status === 'EM_PREPARO');
 
   if (loading) return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', gap: '0.75rem', color: 'var(--text-tertiary)' }}>
+    <div data-testid="cozinha-loading" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', gap: '0.75rem', color: 'var(--text-tertiary)' }}>
       <span className="spinner" /> Carregando pedidos...
     </div>
   );
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', overflow: 'hidden' }}>
+    <div data-testid="cozinha-content" style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', overflow: 'hidden' }}>
 
       <header style={{
         height:         58,
@@ -134,7 +134,7 @@ export default function Cozinha() {
       ) : (
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-          <div className="kanban-col" style={{ borderTop: '3px solid var(--brand-primary)', borderRight: '1px solid var(--border-color)' }}>
+          <div className="kanban-col" data-testid="cozinha-coluna-pendentes" style={{ borderTop: '3px solid var(--brand-primary)', borderRight: '1px solid var(--border-color)' }}>
             <div className="kanban-col-header">
               <span>🔔</span>
               <span className="kanban-col-title">Pendentes</span>
@@ -150,7 +150,7 @@ export default function Cozinha() {
             ))}
           </div>
 
-          <div className="kanban-col" style={{ borderTop: '3px solid var(--color-success)' }}>
+          <div className="kanban-col" data-testid="cozinha-coluna-em-preparo" style={{ borderTop: '3px solid var(--color-success)' }}>
             <div className="kanban-col-header">
               <span>🔥</span>
               <span className="kanban-col-title">Em Preparo</span>

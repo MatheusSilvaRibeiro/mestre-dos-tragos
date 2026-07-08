@@ -113,7 +113,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
 
   return (
     // Overlay escuro que cobre toda a tela
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+    <div data-testid="produto-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <div style={{ background: '#161b27', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', border: '1px solid #1e2535', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
         {/* HEADER — titulo dinamico e botao de fechar */}
@@ -121,7 +121,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e2e8f0' }}>
             {produto ? 'Editar Produto' : 'Novo Produto'}
           </h2>
-          <button onClick={onFechar} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.25rem' }}>x</button>
+          <button onClick={onFechar} data-testid="produto-modal-fechar-btn" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.25rem' }}>x</button>
         </div>
 
         {/* TIPO — determina quais campos aparecem abaixo */}
@@ -137,6 +137,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
                 key={op.value}
                 type="button"
                 onClick={() => setTipo(op.value)}
+                data-testid={`produto-tipo-${op.value}`}
                 style={{
                   flex: 1, padding: '0.5rem 0.25rem',
                   borderRadius: '6px',
@@ -156,7 +157,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem' }}>
           <div>
             <span style={labelStyle}>Nome *</span>
-            <input style={input} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: X-Burguer" />
+            <input style={input} data-testid="produto-nome-input" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: X-Burguer" />
           </div>
           <div>
             <span style={labelStyle}>Emoji</span>
@@ -190,13 +191,14 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
             <input
               style={input} type="number" min="0" step="0.01"
               value={preco} onChange={e => setPreco(e.target.value)}
+              data-testid="produto-preco-input"
               placeholder="0,00"
             />
           </div>
           <div>
             <span style={labelStyle}>Categoria *</span>
             {/* Exibe apenas categorias ativas no select */}
-            <select style={{ ...input, cursor: 'pointer' }} value={categoriaId} onChange={e => setCategoriaId(e.target.value)}>
+            <select style={{ ...input, cursor: 'pointer' }} data-testid="produto-categoria-select" value={categoriaId} onChange={e => setCategoriaId(e.target.value)}>
               <option value="">Selecione...</option>
               {categorias.filter(c => c.ativo).map(c => (
                 <option key={c.id} value={c.id}>{c.nome}</option>
@@ -219,6 +221,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
               <button
                 type="button"
                 onClick={addTamanho}
+                data-testid="produto-tamanho-add-btn"
                 style={{ background: '#1e2535', border: 'none', color: '#94a3b8', cursor: 'pointer', borderRadius: '6px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
               >
                 + Adicionar
@@ -235,12 +238,14 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
                 <input
                   style={input}
                   placeholder="Ex: P / M / G"
+                  data-testid="produto-tamanho-nome-input"
                   value={t.tamanho}
                   onChange={e => atualizarTamanho(i, 'tamanho', e.target.value)}
                 />
                 <input
                   style={input} type="number"
                   placeholder="Preco"
+                  data-testid="produto-tamanho-preco-input"
                   value={t.preco}
                   onChange={e => atualizarTamanho(i, 'preco', e.target.value)}
                 />
@@ -264,6 +269,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
                   key={a.id}
                   type="button"
                   onClick={() => toggleAdicional(a.id)}
+                  data-testid={`produto-adicional-chip-${a.nome}`}
                   style={{
                     padding: '0.3rem 0.75rem', borderRadius: 999,
                     border: 'none', cursor: 'pointer',
@@ -285,6 +291,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
           <button
             type="button"
             onClick={onFechar}
+            data-testid="produto-cancelar-btn"
             style={{ background: '#1e2535', border: 'none', color: '#94a3b8', padding: '0.5rem 1.25rem', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}
           >
             Cancelar
@@ -292,6 +299,7 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
           <button
             type="button"
             onClick={salvar}
+            data-testid="produto-salvar-btn"
             style={{ background: '#f59e0b', border: 'none', color: '#000', padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.875rem' }}
           >
             Salvar

@@ -23,7 +23,7 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
   const itens = pedido.itens ?? [];
 
   return (
-    <div style={{
+    <div data-testid="cozinha-pedido-card" data-pedido-id={pedido.id} style={{
       background:    '#1a1f2e',
       borderLeft:    `4px solid ${urgente ? '#ef4444' : cfg.cor}`,
       borderRadius:  '8px',
@@ -47,7 +47,7 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: urgente ? '#ef4444' : '#475569' }}>
             {tempoEmMinutos(pedido.criadoEm, agora)}
           </span>
-          <span style={{ padding: '0.125rem 0.5rem', borderRadius: 999, background: cfg.bg, color: cfg.cor, fontWeight: 700, fontSize: '0.6875rem' }}>
+          <span data-testid="cozinha-pedido-status" style={{ padding: '0.125rem 0.5rem', borderRadius: 999, background: cfg.bg, color: cfg.cor, fontWeight: 700, fontSize: '0.6875rem' }}>
             {cfg.label}
           </span>
         </div>
@@ -105,6 +105,7 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
         {isPendente ? (
           <button
             onClick={() => onAceitar(pedido.id)}
+            data-testid="cozinha-aceitar-btn"
             style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
           >
             Aceitar
@@ -112,6 +113,7 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
         ) : (
           <button
             onClick={() => onFinalizar(pedido.id)}
+            data-testid="cozinha-finalizar-btn"
             style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
           >
             Pronto

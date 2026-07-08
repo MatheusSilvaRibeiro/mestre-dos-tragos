@@ -32,6 +32,8 @@ export function CardProduto({ produto, qtd, onClick }: Props) {
         if (!inativo) onClick();
       }}
       disabled={inativo}
+      data-testid="atendente-produto-card"
+      data-nome={produto.nome}
       className="surface-interactive"
       style={{
         position: 'relative',

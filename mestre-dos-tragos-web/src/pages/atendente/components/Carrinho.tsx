@@ -106,6 +106,7 @@ export function Carrinho({
             {carrinho.map((item, index) => (
               <div
                 key={index}
+                data-testid="carrinho-item"
                 className="surface-elevated"
                 style={{
                   padding: '0.875rem',
@@ -337,6 +338,7 @@ export function Carrinho({
           </div>
 
           <strong
+            data-testid="carrinho-total"
             style={{
               fontSize: '1.45rem',
               color: 'var(--brand-primary)',
@@ -350,6 +352,7 @@ export function Carrinho({
 
         <button
           onClick={onEnviar}
+          data-testid="carrinho-enviar-btn"
           disabled={desabilitado}
           className={desabilitado ? 'btn btn-secondary btn-lg' : 'btn btn-primary btn-lg'}
           style={{ width: '100%' }}
@@ -360,6 +363,7 @@ export function Carrinho({
         {carrinho.length > 0 && !sucesso && (
           <button
             onClick={onLimpar}
+            data-testid="carrinho-limpar-btn"
             className="btn btn-ghost"
             style={{ width: '100%' }}
           >
@@ -368,7 +372,7 @@ export function Carrinho({
         )}
 
         {sucesso && (
-          <div className="alert alert-success">
+          <div className="alert alert-success" data-testid="carrinho-sucesso-alert">
             Pedido enviado para a cozinha.
           </div>
         )}

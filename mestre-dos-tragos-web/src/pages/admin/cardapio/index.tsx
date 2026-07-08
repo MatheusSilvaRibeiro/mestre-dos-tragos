@@ -178,6 +178,7 @@ export default function Cardapio() {
         {abas.map(a => (
           <button
             key={a.key}
+            data-testid={`cardapio-tab-${a.key}`}
             onClick={() => setAba(a.key)}
             style={{
               padding: '0.625rem 1.125rem',
@@ -211,7 +212,7 @@ export default function Cardapio() {
       {aba === 'produtos' && (
         <div className="animate-fade-in">
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-            <button onClick={() => { setEdit(null); setModal(true); }} className="btn btn-primary">
+            <button onClick={() => { setEdit(null); setModal(true); }} data-testid="produto-novo-btn" className="btn btn-primary">
               + Novo Produto
             </button>
           </div>
@@ -232,22 +233,22 @@ export default function Cardapio() {
               </div>
 
               {produtos.map(p => (
-                <div key={p.id} className="surface-elevated" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '1rem', padding: '0.875rem 1rem', alignItems: 'center', borderLeft: `3px solid ${p.ativo ? 'var(--brand-primary)' : 'var(--border-color)'}`, opacity: p.ativo ? 1 : 0.5, transition: 'opacity var(--transition-base)' }}>
+                <div key={p.id} data-testid="produto-item" data-nome={p.nome} className="surface-elevated" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '1rem', padding: '0.875rem 1rem', alignItems: 'center', borderLeft: `3px solid ${p.ativo ? 'var(--brand-primary)' : 'var(--border-color)'}`, opacity: p.ativo ? 1 : 0.5, transition: 'opacity var(--transition-base)' }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9375rem' }}>{p.nome}</div>
+                    <div data-testid="produto-item-nome" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9375rem' }}>{p.nome}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.15rem' }}>
                       {p.categoria?.nome ?? '—'}{p.tamanhos?.length > 0 ? ` · ${p.tamanhos.length} tamanhos` : ''}
                     </div>
                   </div>
-                  <span style={{ fontWeight: 800, color: 'var(--brand-primary)', fontSize: '0.9375rem', textAlign: 'right' }}>
+                  <span data-testid="produto-item-preco" style={{ fontWeight: 800, color: 'var(--brand-primary)', fontSize: '0.9375rem', textAlign: 'right' }}>
                     {moeda(p.preco)}
                   </span>
-                  <button onClick={() => toggleProduto(p)} className={`btn btn-sm ${p.ativo ? 'btn-success' : 'btn-ghost'}`} style={{ opacity: p.ativo ? 1 : 0.6 }}>
+                  <button onClick={() => toggleProduto(p)} data-testid="produto-item-toggle" className={`btn btn-sm ${p.ativo ? 'btn-success' : 'btn-ghost'}`} style={{ opacity: p.ativo ? 1 : 0.6 }}>
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </button>
                   <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
-                    <button onClick={() => { setEdit(p); setModal(true); }} className="btn btn-icon btn-ghost" title="Editar">✏️</button>
-                    <button onClick={() => deletarProduto(p.id)} className="btn btn-icon btn-danger" title="Deletar">🗑️</button>
+                    <button onClick={() => { setEdit(p); setModal(true); }} data-testid="produto-item-editar" className="btn btn-icon btn-ghost" title="Editar">✏️</button>
+                    <button onClick={() => deletarProduto(p.id)} data-testid="produto-item-deletar" className="btn btn-icon btn-danger" title="Deletar">🗑️</button>
                   </div>
                 </div>
               ))}
@@ -259,8 +260,8 @@ export default function Cardapio() {
       {aba === 'categorias' && (
         <div className="animate-fade-in" style={{ maxWidth: 520 }}>
           <div className="surface-elevated" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', gap: '0.75rem' }}>
-            <input className="input-field" style={{ flex: 1 }} placeholder="Nome da categoria..." value={novaCateg} onChange={e => setNovaC(e.target.value)} onKeyDown={e => e.key === 'Enter' && salvarCategoria()} />
-            <button onClick={salvarCategoria} className="btn btn-primary">+ Criar</button>
+            <input className="input-field" data-testid="categoria-nome-input" style={{ flex: 1 }} placeholder="Nome da categoria..." value={novaCateg} onChange={e => setNovaC(e.target.value)} onKeyDown={e => e.key === 'Enter' && salvarCategoria()} />
+            <button onClick={salvarCategoria} data-testid="categoria-criar-btn" className="btn btn-primary">+ Criar</button>
           </div>
 
           {categorias.length === 0 ? (
@@ -271,11 +272,11 @@ export default function Cardapio() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {categorias.map(c => (
-                <div key={c.id} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${c.ativo ? 'var(--brand-primary)' : 'var(--border-color)'}`, opacity: c.ativo ? 1 : 0.5 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.nome}</span>
+                <div key={c.id} data-testid="categoria-item" data-nome={c.nome} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${c.ativo ? 'var(--brand-primary)' : 'var(--border-color)'}`, opacity: c.ativo ? 1 : 0.5 }}>
+                  <span data-testid="categoria-item-nome" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.nome}</span>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => toggleCategoria(c)} className={`btn btn-sm ${c.ativo ? 'btn-success' : 'btn-ghost'}`}>{c.ativo ? 'Ativo' : 'Inativo'}</button>
-                    <button onClick={() => deletarCategoria(c.id)} className="btn btn-icon btn-danger">🗑️</button>
+                    <button onClick={() => toggleCategoria(c)} data-testid="categoria-item-toggle" className={`btn btn-sm ${c.ativo ? 'btn-success' : 'btn-ghost'}`}>{c.ativo ? 'Ativo' : 'Inativo'}</button>
+                    <button onClick={() => deletarCategoria(c.id)} data-testid="categoria-item-deletar" className="btn btn-icon btn-danger">🗑️</button>
                   </div>
                 </div>
               ))}
@@ -287,9 +288,9 @@ export default function Cardapio() {
       {aba === 'adicionais' && (
         <div className="animate-fade-in" style={{ maxWidth: 520 }}>
           <div className="surface-elevated" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', gap: '0.75rem' }}>
-            <input className="input-field" style={{ flex: 1 }} placeholder="Nome do adicional..." value={novoAdic.nome} onChange={e => setNovoA(p => ({ ...p, nome: e.target.value }))} />
-            <input className="input-field" type="number" min="0" step="0.01" placeholder="R$ 0,00" style={{ width: 110 }} value={novoAdic.preco} onChange={e => setNovoA(p => ({ ...p, preco: e.target.value }))} />
-            <button onClick={salvarAdicional} className="btn btn-primary">+ Criar</button>
+            <input className="input-field" data-testid="adicional-nome-input" style={{ flex: 1 }} placeholder="Nome do adicional..." value={novoAdic.nome} onChange={e => setNovoA(p => ({ ...p, nome: e.target.value }))} />
+            <input className="input-field" data-testid="adicional-preco-input" type="number" min="0" step="0.01" placeholder="R$ 0,00" style={{ width: 110 }} value={novoAdic.preco} onChange={e => setNovoA(p => ({ ...p, preco: e.target.value }))} />
+            <button onClick={salvarAdicional} data-testid="adicional-criar-btn" className="btn btn-primary">+ Criar</button>
           </div>
 
           {adicionais.length === 0 ? (
@@ -300,12 +301,12 @@ export default function Cardapio() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {adicionais.map(a => (
-                <div key={a.id} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${a.ativo ? 'var(--color-success)' : 'var(--border-color)'}`, opacity: a.ativo ? 1 : 0.5 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{a.nome}</span>
+                <div key={a.id} data-testid="adicional-item" data-nome={a.nome} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${a.ativo ? 'var(--color-success)' : 'var(--border-color)'}`, opacity: a.ativo ? 1 : 0.5 }}>
+                  <span data-testid="adicional-item-nome" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{a.nome}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--brand-primary)', fontSize: '0.875rem' }}>{moeda(a.preco)}</span>
-                    <button onClick={() => toggleAdicional(a)} className={`btn btn-sm ${a.ativo ? 'btn-success' : 'btn-ghost'}`}>{a.ativo ? 'Ativo' : 'Inativo'}</button>
-                    <button onClick={() => deletarAdicional(a.id)} className="btn btn-icon btn-danger">🗑️</button>
+                    <span data-testid="adicional-item-preco" style={{ fontWeight: 700, color: 'var(--brand-primary)', fontSize: '0.875rem' }}>{moeda(a.preco)}</span>
+                    <button onClick={() => toggleAdicional(a)} data-testid="adicional-item-toggle" className={`btn btn-sm ${a.ativo ? 'btn-success' : 'btn-ghost'}`}>{a.ativo ? 'Ativo' : 'Inativo'}</button>
+                    <button onClick={() => deletarAdicional(a.id)} data-testid="adicional-item-deletar" className="btn btn-icon btn-danger">🗑️</button>
                   </div>
                 </div>
               ))}
