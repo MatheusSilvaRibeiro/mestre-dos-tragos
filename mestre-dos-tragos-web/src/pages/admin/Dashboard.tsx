@@ -16,16 +16,18 @@ function moeda(v: number) {
 // Componente reutilizavel para exibir um indicador com icone, label e valor.
 // A borda colorida na esquerda e o icone usam as variaveis de cor do tema.
 // 
-function CardMetrica({ emoji, label, valor, cor, bg }: {
+function CardMetrica({ emoji, label, valor, cor, bg, testId }: {
   emoji: string;
   label: string;
   valor: string;
   cor:   string;
   bg:    string;
+  testId?: string;
 }) {
   return (
     <div
       className="surface-elevated"
+      data-testid={testId}
       style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: `3px solid ${cor}`, transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)', cursor: 'default' }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.transform  = 'translateY(-2px)';
@@ -104,18 +106,18 @@ export default function Dashboard() {
   const mediaDiaria      = periodo.length > 0 ? totalFatPer / periodo.length : 0;
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: '0.75rem', color: 'var(--text-tertiary)' }}>
+    <div data-testid="dashboard-loading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: '0.75rem', color: 'var(--text-tertiary)' }}>
       <span className="spinner" /> Carregando metricas...
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: 1200 }}>
+    <div data-testid="dashboard-content" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: 1200 }}>
 
       {/* CABECALHO — saudacao personalizada e alerta de pedidos pendentes */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+          <h1 data-testid="dashboard-saudacao" style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
             {saudacao}, {funcionario?.nome?.split(' ')[0]} 👋
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
@@ -137,10 +139,10 @@ export default function Dashboard() {
           <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, margin: 0 }}>Vendas de Hoje</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <CardMetrica emoji="🧾" label="Pedidos"      valor={String(pedidosHoje)}              cor="var(--brand-primary)" bg="var(--brand-primary-dim)" />
-          <CardMetrica emoji="💰" label="Faturamento"  valor={moeda(hoje?.faturamentoHoje ?? 0)} cor="var(--color-success)"  bg="var(--color-success-dim)" />
-          <CardMetrica emoji="🎯" label="Ticket Medio" valor={moeda(hoje?.ticketMedio ?? 0)}     cor="var(--color-info)"     bg="var(--color-info-dim)" />
-          <CardMetrica emoji="⏳" label="Pendentes"    valor={String(pedidosPendentes)}          cor="var(--color-danger)"   bg="var(--color-danger-dim)" />
+          <CardMetrica testId="card-pedidos-hoje"     emoji="🧾" label="Pedidos"      valor={String(pedidosHoje)}              cor="var(--brand-primary)" bg="var(--brand-primary-dim)" />
+          <CardMetrica testId="card-faturamento-hoje" emoji="💰" label="Faturamento"  valor={moeda(hoje?.faturamentoHoje ?? 0)} cor="var(--color-success)"  bg="var(--color-success-dim)" />
+          <CardMetrica testId="card-ticket-medio"     emoji="🎯" label="Ticket Medio" valor={moeda(hoje?.ticketMedio ?? 0)}     cor="var(--color-info)"     bg="var(--color-info-dim)" />
+          <CardMetrica testId="card-pendentes"        emoji="⏳" label="Pendentes"    valor={String(pedidosPendentes)}          cor="var(--color-danger)"   bg="var(--color-danger-dim)" />
         </div>
         {/* Aviso quando nenhum pedido foi feito no dia */}
         {pedidosHoje === 0 && (
