@@ -151,6 +151,7 @@ export async function editar(req: Request, res: Response) {
       preco,
       categoriaId,
       disponivel,
+      ativo,
       tamanhos,
       adicionaisIds,
     } = editarProdutoSchema.parse(req.body);
@@ -184,6 +185,7 @@ export async function editar(req: Request, res: Response) {
           }
         : {}),
       ...(disponivel !== undefined ? { disponivel } : {}),
+      ...(ativo !== undefined ? { ativo } : {}),
       // Nota: se "tamanhos" vier como array vazio [], isso NÃO limpa os tamanhos
       // existentes (fica do jeito que estava). Se quiser permitir limpar tudo,
       // troque a condição por `tamanhos !== undefined`.

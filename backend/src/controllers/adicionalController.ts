@@ -90,7 +90,7 @@ export async function criar(req: Request, res: Response) {
 export async function editar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { nome, preco, precoPorTamanho } = editarAdicionalSchema.parse(req.body);
+    const { nome, preco, precoPorTamanho, ativo } = editarAdicionalSchema.parse(req.body);
 
     const existe = await prisma.adicional.findUnique({ where: { id } });
     if (!existe) {
@@ -102,6 +102,7 @@ export async function editar(req: Request, res: Response) {
       data: {
         ...(nome && { nome }),
         ...(preco !== undefined && { preco: Number(preco) }),
+        ...(ativo !== undefined && { ativo }),
         ...(precoPorTamanho && precoPorTamanho.length > 0 && {
           precoPorTamanho: {
             deleteMany: {},

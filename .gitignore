@@ -17,3 +17,5 @@ mestre-dos-tragos-web/dist/
 
 # Logs
 *.log
+
+backend/coverage/

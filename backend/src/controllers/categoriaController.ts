@@ -65,7 +65,7 @@ export async function editar(req: Request, res: Response) {
   try {
     //  "as string" → garante pro TypeScript que é uma string
     const id = req.params.id as string;
-    const { nome } = categoriaSchema.parse(req.body);
+    const { nome, ativo } = categoriaSchema.parse(req.body);
 
     const existe = await prisma.categoria.findUnique({
       where: { id }
@@ -77,7 +77,10 @@ export async function editar(req: Request, res: Response) {
 
     const categoriaAtualizada = await prisma.categoria.update({
       where: { id },
-      data: { nome }
+      data: {
+        nome,
+        ...(ativo !== undefined ? { ativo } : {}),
+      }
     });
 
     return res.json({

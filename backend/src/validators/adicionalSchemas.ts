@@ -14,6 +14,11 @@ const baseAdicionalSchema = z.object({
   nome: z.string().trim().optional(),
   preco: z.union([z.number(), z.string()]).optional(),
   precoPorTamanho: z.array(precoPorTamanhoSchema).optional(),
+  // Opcional: permite que PUT /adicionais/:id tambem alterne o campo
+  // ativo (usado pelo botao "Ativo/Inativo" do admin). Antes desse campo
+  // existir aqui, o Zod descartava "ativo" do payload silenciosamente —
+  // o PUT respondia 200 mas nunca persistia a mudanca.
+  ativo: z.boolean().optional(),
 });
 
 // ─────────────────────────────────────────────────────────
