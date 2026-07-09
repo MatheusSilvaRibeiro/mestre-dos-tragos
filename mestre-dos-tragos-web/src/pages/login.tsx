@@ -25,7 +25,7 @@ export default function Login() {
 
       flushSync(() => login(token, funcionario));
 
-      if (funcionario.role === 'ADMIN') navigate('/selecionar', { replace: true });
+      if (funcionario.role === 'ADMIN') navigate('/admin', { replace: true });
       else if (funcionario.role === 'COZINHA') navigate('/cozinha', { replace: true });
       else navigate('/atendente', { replace: true });
     } catch (err) {
