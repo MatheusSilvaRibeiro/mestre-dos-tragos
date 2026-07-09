@@ -6,15 +6,13 @@ export type Role = 'ADMIN' | 'ATENDENTE' | 'COZINHA';
 /**
  * Mapa de "URL final esperada apos login" por role.
  *
- * Atencao a peculiaridade do fluxo de ADMIN: em src/pages/login.tsx, apos
- * autenticar como ADMIN a aplicacao navega para "/selecionar", rota que
- * NAO existe em src/App.tsx. O catch-all ("*") redireciona entao para "/"
- * (Splash), que por sua vez aguarda ~1.8s e so ai redireciona para
- * "/admin" (ja que o usuario esta autenticado). Ou seja: o login de ADMIN
- * funciona, mas passa por um salto extra e uma espera perceptivel.
- * Isso NAO e um comportamento intencional aparente — vale reportar como
- * um bug de roteamento para quem mantem o frontend. Os testes abaixo
- * assumem esse comportamento atual e usam timeout maior para o ADMIN.
+ * HISTORICO: ate o commit que corrigiu fix/admin-login-redirect, o login de
+ * ADMIN navegava para "/selecionar" (rota inexistente em App.tsx), caia no
+ * catch-all "*" e so chegava em "/admin" apos um bounce via Splash (~1.8s).
+ * Isso foi corrigido — login.tsx agora navega direto para "/admin". O
+ * LOGIN_TIMEOUT abaixo continua generoso mesmo assim, por causa do cold
+ * start da API no Render (ver comentario logo abaixo), nao por causa desse
+ * bug antigo.
  */
 const URL_POR_ROLE: Record<Role, string | RegExp> = {
   ADMIN: '/admin',
