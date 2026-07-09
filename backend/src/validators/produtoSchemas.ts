@@ -28,6 +28,7 @@ const baseProdutoSchema = z.object({
   preco: z.union([z.number(), z.string()]).optional(),
   categoriaId: z.string().optional(),
   disponivel: z.boolean().optional(),
+  ativo: z.boolean().optional(),
   tipo: z.string().optional(),
   tamanhos: z.array(tamanhoPayloadSchema).optional(),
   adicionaisIds: z.array(z.string()).optional(),

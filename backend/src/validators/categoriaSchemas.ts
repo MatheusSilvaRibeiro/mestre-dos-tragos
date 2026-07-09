@@ -12,6 +12,11 @@ export const categoriaSchema = z.object({
     (valor) => (typeof valor === 'string' ? valor.trim() : (valor ?? '')),
     z.string().min(1, 'Nome é obrigatório!'),
   ),
+  // Opcional: permite que PUT /categorias/:id tambem alterne o campo
+  // ativo (usado pelo botao "Ativo/Inativo" do admin). Antes desse campo
+  // existir aqui, o Zod descartava "ativo" do payload silenciosamente —
+  // o PUT respondia 200 mas nunca persistia a mudanca.
+  ativo: z.boolean().optional(),
 });
 
 export type CategoriaInput = z.infer<typeof categoriaSchema>;
