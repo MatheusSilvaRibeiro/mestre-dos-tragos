@@ -1,504 +1,188 @@
-# Mestre dos Tragos
-
+<div align="center">
+# 🍺 Mestre dos Tragos
+ 
+**Sistema de gestão operacional para bares, lancherias e pequenos restaurantes.**
+ 
+Atendimento • Cozinha em tempo real • Cardápio • Dashboard • Relatórios
+ 
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Jest](https://img.shields.io/badge/Jest-Tests-C21325?style=for-the-badge&logo=jest&logoColor=white)
-
-Sistema web full stack para gestão operacional de lancherias, bares e pequenos restaurantes, com atendimento, painel de cozinha em tempo real, gestão de cardápio, controle de funcionários, relatórios e dashboard administrativo.
-
-O projeto foi desenvolvido com foco em organização, segurança, qualidade de código e práticas profissionais de engenharia de software, incluindo TypeScript, Prisma, autenticação JWT, WebSocket, testes automatizados, cobertura de código, CI/CD, Swagger, Zod, Helmet, Rate Limit e Git Flow.
-
+![Jest](https://img.shields.io/badge/Jest-177%20tests-C21325?style=for-the-badge&logo=jest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+ 
+</div>
 ---
-
-## Sumário
-
-- [Sobre o projeto](#sobre-o-projeto)
-- [Funcionalidades](#funcionalidades)
-- [Perfis de acesso](#perfis-de-acesso)
-- [Arquitetura](#arquitetura)
-- [Tecnologias](#tecnologias)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Pré-requisitos](#pré-requisitos)
-- [Configuração do backend](#configuração-do-backend)
-- [Configuração do frontend](#configuração-do-frontend)
-- [Scripts disponíveis](#scripts-disponíveis)
-- [Testes e cobertura](#testes-e-cobertura)
-- [Documentação da API](#documentação-da-api)
-- [Segurança](#segurança)
-- [Banco de dados](#banco-de-dados)
-- [Fluxo Git](#fluxo-git)
-- [CI/CD](#cicd)
-- [Roadmap](#roadmap)
-- [Autor](#autor)
-
+ 
+## O que é
+ 
+Um sistema full stack que centraliza o fluxo operacional de um estabelecimento alimentício em três telas conectadas por WebSocket: o **atendente** monta o pedido, a **cozinha** recebe e atualiza o status em tempo real, e o **admin** acompanha tudo — cardápio, funcionários, faturamento e relatórios — em um dashboard central.
+ 
+Três perfis de acesso, JWT, permissões por role, e uma API documentada com Swagger por trás de tudo.
+ 
+## O que este projeto demonstra
+ 
+Além do CRUD básico esperado de um sistema de pedidos, este repositório foi usado deliberadamente como campo de prática de engenharia de software mais ampla:
+ 
+- **Suíte de testes em duas camadas** — 177 testes unitários/integração (Jest, >93% de cobertura) no backend, e uma suíte E2E completa (Playwright) no frontend, rodando contra a API real.
+- **Bugs reais encontrados e corrigidos através dos testes**, não apenas escritos depois que tudo já "funcionava" — incluindo um bug de persistência de dados no backend que só apareceu porque um teste E2E foi construído com rigor suficiente para expor a diferença entre "a API respondeu 200" e "a API salvou o dado".
+- **Um deploy de produção quebrado, diagnosticado e corrigido** — não um bug de lógica, um problema real de ambiente de build (ver [Limitações conhecidas](#limitações-conhecidas) para o que ainda está em aberto).
+- **Fluxo de Git disciplinado**: uma branch por problema, PR por mudança, validação local antes de cada merge.
+- **Documentação honesta** sobre o que funciona e o que ainda não está redondo — ver a seção abaixo.
 ---
-
-## Sobre o projeto
-
-O **Mestre dos Tragos** é uma aplicação para apoiar a operação diária de estabelecimentos alimentícios. A proposta é centralizar o fluxo de pedidos, cardápio, cozinha, funcionários e indicadores em uma plataforma única.
-
-O sistema foi pensado para três momentos principais da operação:
-
-1. **Atendimento**: montagem de pedidos com produtos, tamanhos, adicionais, sabores e observações.
-2. **Cozinha**: acompanhamento dos pedidos em tempo real por status operacional.
-3. **Administração**: gestão de cardápio, funcionários, dashboard e relatórios.
-
+ 
+## Tecnologias
+ 
+**Backend** — Node.js, Express, TypeScript, Prisma + PostgreSQL, Socket.IO, JWT, bcrypt, Zod, Swagger, Helmet, Compression, Rate Limit, Pino, Jest + Supertest.
+ 
+**Frontend** — React, TypeScript, Vite, React Router, Axios, Socket.IO Client, Playwright.
+ 
+**DevOps & qualidade** — Docker Compose, GitHub Actions, CodeQL, Dependabot, Git Flow.
+ 
 ---
-
-## Funcionalidades
-
-### Atendimento
-
-- Listagem de produtos disponíveis.
-- Filtro por categorias.
-- Carrinho de pedidos.
-- Seleção de tamanhos.
-- Seleção de adicionais.
-- Observações por item e por pedido.
-- Consulta de pedidos.
-
-### Cozinha
-
-- Painel em tempo real com WebSocket.
-- Visualização dos pedidos por status.
-- Atualização do andamento do pedido.
-- Destaque visual para acompanhamento operacional.
-
-### Administração
-
-- Dashboard com métricas operacionais.
-- Gestão de produtos.
-- Gestão de categorias.
-- Gestão de adicionais.
-- Gestão de funcionários.
-- Histórico de pedidos.
-- Relatórios por período, status, produto e atendente.
-
-### Autenticação e autorização
-
-- Login com JWT.
-- Controle de acesso por perfil.
-- Rotas protegidas.
-- Controle de permissões por função.
-
----
-
-## Perfis de acesso
-
-| Perfil | Permissões principais |
-|---|---|
-| `ADMIN` | Acesso total ao sistema, dashboard, relatórios, cardápio e funcionários. |
-| `ATENDENTE` | Criação e acompanhamento de pedidos. |
-| `COZINHA` | Visualização e atualização de pedidos na cozinha. |
-
----
-
-## Arquitetura
-
-O projeto está organizado como uma aplicação full stack separada em dois módulos principais:
-
+ 
+## Estrutura
+ 
 ```text
 mestre-dos-tragos/
 ├── backend/                  # API Node.js + Express + Prisma
+│   └── src/
+│       ├── controllers/ · routes/ · validators/    # camadas da API
+│       ├── middlewares/                            # auth, roles, rate limit, log
+│       ├── scripts/                                # auditoria/limpeza de dados
+│       └── tests/                                  # suíte Jest
 ├── mestre-dos-tragos-web/    # Frontend React + Vite
-├── .github/                  # Workflows de CI
-├── .gitignore
-└── README.md
+│   └── e2e/                                        # suíte Playwright
+├── docs/
+│   └── API.md                                      # referência completa de endpoints
+├── .github/                                        # CI, CodeQL, Dependabot
+└── docker-compose.yml
 ```
-
+ 
+Referência completa de endpoints e do health check: **[`docs/API.md`](./docs/API.md)**.
+ 
+---
+ 
+## Como rodar
+ 
+Pré-requisitos: Node.js 20+, npm, PostgreSQL (ou Docker), Git.
+ 
 ### Backend
-
-O backend utiliza Express com TypeScript, Prisma ORM e PostgreSQL. Ele organiza a aplicação em camadas:
-
-```text
-backend/src/
-├── config/          # Configuração do Prisma e Socket.IO
-├── controllers/     # Controllers da API
-├── docs/            # Configuração do Swagger
-├── middlewares/     # Autenticação, autorização, erros e rate limit
-├── modules/         # Módulos específicos, como dashboard
-├── routes/          # Rotas HTTP
-├── tests/           # Testes automatizados
-├── types/           # Tipagens globais
-├── validators/      # Schemas Zod
-└── server.ts        # Inicialização da aplicação
-```
-
-### Frontend
-
-O frontend utiliza React, TypeScript e Vite. A aplicação está organizada por páginas e componentes:
-
-```text
-mestre-dos-tragos-web/src/
-├── components/      # Componentes reutilizáveis
-├── context/         # Contextos globais, como autenticação
-├── pages/           # Telas da aplicação
-├── services/        # Integração com API
-├── styles/          # Estilos globais e tema
-├── App.tsx
-└── main.tsx
-```
-
----
-
-## Tecnologias
-
-### Backend
-
-- Node.js
-- Express
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- Socket.IO
-- JWT
-- bcrypt
-- Zod
-- Swagger
-- Helmet
-- Compression
-- Express Rate Limit
-- Jest
-- Supertest
-- ESLint
-
-### Frontend
-
-- React
-- TypeScript
-- Vite
-- React Router DOM
-- Axios
-- Socket.IO Client
-- ESLint
-
-### DevOps e qualidade
-
-- GitHub Actions
-- Git Flow
-- Branch Protection
-- Testes automatizados
-- Relatório de cobertura
-- CI com lint, typecheck, testes e build
-
----
-
-## Pré-requisitos
-
-Antes de executar o projeto, instale:
-
-- Node.js 20 ou superior
-- npm
-- PostgreSQL
-- Git
-
----
-
-## Configuração do backend
-
-Acesse a pasta do backend:
-
+ 
 ```bash
 cd backend
-```
-
-Instale as dependências:
-
-```bash
 npm install
-```
-
-Crie o arquivo `.env` com base no exemplo:
-
-```bash
-cp .env.example .env
-```
-
-Exemplo de variáveis:
-
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/mestre_dos_tragos?schema=public"
-JWT_SECRET="seu_secret_aqui"
-PORT=3333
-FRONTEND_URL="http://localhost:5173"
-```
-
-Execute as migrações do Prisma:
-
-```bash
+cp .env.example .env    # preencher DATABASE_URL, JWT_SECRET, PORT
 npx prisma migrate dev
+npm run dev              # http://localhost:3333
 ```
-
-Gere o Prisma Client:
-
-```bash
-npx prisma generate
-```
-
-Inicie o backend em desenvolvimento:
-
-```bash
-npm run dev
-```
-
-A API ficará disponível em:
-
-```text
-http://localhost:3333
-```
-
----
-
-## Configuração do frontend
-
-Acesse a pasta do frontend:
-
+ 
+### Frontend
+ 
 ```bash
 cd mestre-dos-tragos-web
-```
-
-Instale as dependências:
-
-```bash
 npm install
+npm run dev               # http://localhost:5173
 ```
-
-Inicie o frontend:
-
+ 
+> ⚠️ A `baseURL` do Axios (`src/services/api.ts`) está fixa apontando para a API de produção — não lê variável de ambiente ainda. Rodar o frontend localmente hoje ainda depende da API de produção estar no ar. Detalhes em [Limitações conhecidas](#limitações-conhecidas).
+ 
+### Docker
+ 
 ```bash
-npm run dev
+docker compose build --no-cache
+docker compose up
 ```
-
-A aplicação ficará disponível em:
-
-```text
-http://localhost:5173
-```
-
+ 
+Frontend em `localhost:8080`, backend em `localhost:3333`. Requer `backend/.env` preenchido antes de subir.
+ 
 ---
-
-## Scripts disponíveis
-
-### Backend
-
-| Script | Descrição |
-|---|---|
-| `npm run dev` | Inicia o backend em modo desenvolvimento. |
-| `npm run build` | Gera o Prisma Client e compila o TypeScript. |
-| `npm run start` | Executa a versão compilada em `dist`. |
-| `npm run lint` | Executa o ESLint. |
-| `npm run lint:fix` | Executa o ESLint com correção automática. |
-| `npm run typecheck` | Executa verificação de tipos com TypeScript. |
-| `npm run test` | Executa os testes com Jest. |
-| `npm run test:watch` | Executa os testes em modo observação. |
-| `npm run test:coverage` | Executa testes com relatório de cobertura. |
-
-### Frontend
-
-| Script | Descrição |
-|---|---|
-| `npm run dev` | Inicia o Vite em desenvolvimento. |
-| `npm run build` | Compila TypeScript e gera build de produção. |
-| `npm run lint` | Executa o ESLint. |
-| `npm run preview` | Pré-visualiza o build localmente. |
-
+ 
+## Scripts principais
+ 
+| | Backend | Frontend |
+|---|---|---|
+| Dev | `npm run dev` | `npm run dev` |
+| Build | `npm run build` | `npm run build` |
+| Lint | `npm run lint` | `npm run lint` |
+| Testes | `npm run test` | `npm run test:e2e` |
+| Cobertura | `npm run test:coverage` | — |
+| Typecheck | `npm run typecheck` | — |
+ 
+`build` e `typecheck` do backend usam configs de TypeScript diferentes de propósito: `build` (`tsconfig.build.json`) exclui os arquivos de teste, porque o compilador de produção nunca deveria precisar deles — misturar os dois já causou uma falha de deploy real.
+ 
 ---
-
-## Testes e cobertura
-
-O backend possui uma suíte automatizada com Jest e Supertest.
-
-Para executar os testes:
-
+ 
+## Testes
+ 
+**Backend (Jest):** 13 suítes, 177 testes, cobertura global acima de 93%.
+ 
+**Frontend (Playwright):** roda contra a API real de produção — não existe staging ainda — com seed e limpeza automáticos por suíte, para não acumular dados de teste. Requer credenciais de teste via variáveis de ambiente, uma por perfil:
+ 
 ```bash
-cd backend
-npm run test
+export E2E_ADMIN_USUARIO=... E2E_ADMIN_SENHA=...
+export E2E_ATENDENTE_USUARIO=... E2E_ATENDENTE_SENHA=...
+export E2E_COZINHA_USUARIO=... E2E_COZINHA_SENHA=...
+npm run test:e2e
 ```
-
-Para gerar relatório de cobertura:
-
-```bash
-npm run test:coverage
-```
-
-Estado atual da suíte:
-
-- 13 suítes de testes.
-- 177 testes automatizados.
-- Cobertura global superior a 94%.
-- Middlewares críticos cobertos.
-- Controllers principais cobertos.
-
-A cobertura mínima global é controlada no `jest.config.ts`.
-
+ 
+Debugar um arquivo isolado com navegador visível: `npm run test:e2e -- e2e/login.spec.ts --headed`.
+ 
 ---
-
-## Documentação da API
-
-A API possui documentação inicial com Swagger.
-
-Com o backend rodando, acesse:
-
-```text
-http://localhost:3333/api-docs
-```
-
-A documentação está configurada em:
-
-```text
-backend/src/docs/swagger.ts
-```
-
----
-
+ 
 ## Segurança
-
-O backend possui uma camada inicial de hardening para produção:
-
-- **Helmet** para cabeçalhos HTTP de segurança.
-- **CORS** configurado por origem permitida.
-- **Compression** para compressão de respostas.
-- **Rate Limit global** para reduzir abuso da API.
-- **Rate Limit específico no login** contra força bruta.
-- **JWT** para autenticação.
-- **bcrypt** para hash de senhas.
-- **Zod** para validação de entradas.
-- **Controle de acesso por role** com middleware dedicado.
-
+ 
+Helmet · CORS por origem · Rate Limit (global + login) · JWT · bcrypt · validação com Zod · controle de acesso por role · logs estruturados com Pino · CodeQL e Dependabot ativos no CI.
+ 
 ---
-
+ 
 ## Banco de dados
-
-O projeto utiliza Prisma ORM com PostgreSQL.
-
-Principais entidades:
-
-- `Usuario`
-- `Categoria`
-- `Produto`
-- `ProdutoTamanho`
-- `Adicional`
-- `AdicionalTamanho`
-- `ProdutoAdicional`
-- `Pedido`
-- `ItemPedido`
-- `ItemPedidoAdicional`
-- `ItemPedidoSabor`
-
-Enums principais:
-
-- `Role`: `ADMIN`, `ATENDENTE`, `COZINHA`
-- `StatusPedido`: `PENDENTE`, `EM_PREPARO`, `PRONTO`, `ENTREGUE`, `CANCELADO`
-- `TipoProduto`: `LANCHE`, `BATATA_FRITA`, `PORCAO_MISTA`
-- `Tamanho`: `P`, `M`, `G`
-
+ 
+Prisma + PostgreSQL. Entidades principais: `Usuario`, `Categoria`, `Produto` (+ `ProdutoTamanho`, `ProdutoAdicional`), `Adicional` (+ `AdicionalTamanho`), `Pedido` (+ `ItemPedido`, adicionais e sabores). Enums: `Role`, `StatusPedido`, `TipoProduto`, `Tamanho`.
+ 
+`backend/src/scripts/` tem dois utilitários que nasceram de uma necessidade real (limpar dados de teste acumulados em produção antes do cleanup automático existir): `check-e2e-prefixes.ts` (auditoria, só leitura) e `cleanup-e2e-data.ts` (exclusão, dry-run por padrão, só executa de fato com `--confirmar`).
+ 
 ---
-
+ 
 ## Fluxo Git
-
-O projeto utiliza um fluxo baseado em Git Flow:
-
-```text
-main       # versão estável
-   ↑
-develop    # integração das features
-   ↑
-feature/*  # novas funcionalidades
-fix/*      # correções
-chore/*    # manutenção
-refactor/* # refatorações
-docs/*     # documentação
-security/* # melhorias de segurança
-```
-
-Fluxo recomendado:
-
-1. Criar branch a partir de `develop`.
-2. Desenvolver a alteração.
-3. Rodar validações locais.
-4. Abrir Pull Request para `develop`.
-5. Aguardar CI passar.
-6. Fazer merge.
-7. Promover `develop` para `main` apenas em releases estáveis.
-
----
-
+ 
+`main` (estável) ← `develop` (integração) ← `feature/*` `fix/*` `chore/*` `docs/*`.
+ 
+Branch a partir de `develop`, uma mudança por branch → validações locais → PR para `develop` → CI passa → merge. `develop` só é promovida para `main` em releases estáveis, depois de uma checklist completa (backend + frontend + Docker + validação manual).
+ 
 ## CI/CD
-
-O projeto utiliza GitHub Actions para validação automática.
-
-Validações do backend:
-
-- Instalação de dependências.
-- ESLint.
-- Typecheck.
-- Testes automatizados.
-- Build.
-
-Validações do frontend:
-
-- Instalação de dependências.
-- ESLint.
-- Build.
-
-A recomendação é manter Pull Requests pequenos e com objetivo único.
-
+ 
+| Workflow | Gatilho | Faz |
+|---|---|---|
+| `ci.yml` | — | Lint, typecheck, testes e build do backend |
+| `codeql.yml` | push/PR em `main`/`develop`, semanal | Análise estática de segurança |
+| `dependabot.yml` | semanal | Atualização de dependências |
+ 
 ---
-
+ 
+## Limitações conhecidas
+ 
+Um projeto sem limitações documentadas geralmente só significa que ninguém olhou fundo o suficiente. Estas quatro foram encontradas durante uma rodada de estabilização — cada uma tem uma causa raiz identificada, não é só "sabemos que existe":
+ 
+- **`ci.yml` está malformado.** Falta a chave `on:` (gatilho) e o wrapper `jobs:` no topo do arquivo — sem esses campos, o GitHub Actions provavelmente nem reconhece isso como workflow válido. Também não há job de validação de frontend, só de backend. Corrigir antes de confiar no CI como gate de qualidade real.
+- **`baseURL` do Axios fixa em produção.** `src/services/api.ts` não lê nenhuma variável de ambiente — diferente do cliente Socket.IO no mesmo projeto, que já usa `VITE_API_URL` corretamente. Rodar o frontend local sempre depende da API de produção estar no ar.
+- **Sem ambiente de staging.** A suíte E2E roda contra dados reais de produção. Isso já causou acúmulo de dados de teste no banco (mitigado com scripts de auditoria/limpeza — ver acima), mas o risco estrutural continua enquanto não houver um ambiente separado.
+- **Cold start no plano gratuito do Render.** O backend "dorme" após inatividade; o primeiro request do dia pode levar dezenas de segundos, o que afeta diretamente os testes E2E e a primeira impressão de quem acessa.
+---
+ 
 ## Roadmap
-
-### Concluído
-
-- Estrutura full stack.
-- Autenticação JWT.
-- Controle de perfis.
-- Painel de atendimento.
-- Painel da cozinha.
-- Dashboard administrativo.
-- Gestão de cardápio.
-- Gestão de funcionários.
-- Relatórios.
-- WebSocket.
-- Testes automatizados.
-- Cobertura de testes.
-- Swagger.
-- Hardening inicial de segurança.
-- Validação com Zod.
-- CI/CD.
-- Branch Protection.
-
-### Próximas melhorias sugeridas
-
-- README com screenshots reais.
-- Docker e Docker Compose.
-- CodeQL.
-- Dependabot.
-- Logs estruturados com Pino ou Winston.
-- Testes E2E com Playwright.
-- Versionamento de API (`/api/v1`).
-- Ambiente de homologação.
-- Monitoramento e métricas.
-- Preparação para multiempresa.
-
+ 
+**Concluído:** arquitetura full stack, JWT + 3 perfis, cardápio, WebSocket, dashboard, relatórios, testes unitários e E2E, Swagger, hardening de segurança, logs estruturados, health check com verificação real de banco, Docker, CodeQL, Dependabot, CI.
+ 
+**Próximos passos:** corrigir `ci.yml`, tornar a `baseURL` do frontend configurável por ambiente, ambiente de staging dedicado, screenshots reais neste README, versionamento de API, monitoramento e métricas.
+ 
 ---
-
-## Observações importantes
-
-- Não versionar `.env`.
-- Não versionar `node_modules`.
-- Não versionar `coverage`.
-- Não versionar `dist`.
-- Usar `.env.example` para documentar variáveis necessárias.
-- Atualizar a documentação sempre que novas rotas ou módulos forem adicionados.
-
----
-
-## Autor
-
-Desenvolvido por **Matheus Silva Ribeiro**.
-
-Projeto construído com foco em evolução prática de engenharia de software, qualidade de código, automação, segurança e preparação para uso real em ambiente comercial.
+ 
+<div align="center">
+Desenvolvido por **Matheus Silva Ribeiro**
+ 
+</div>
