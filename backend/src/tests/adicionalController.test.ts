@@ -31,7 +31,7 @@ describe('adicionalController.listar', () => {
     const adicionais = [{ id: 'ad-1', nome: 'Bacon', ativo: true }];
     (prisma.adicional.findMany as jest.Mock).mockResolvedValue(adicionais);
 
-    const req = {} as Request;
+    const req = { query: {} } as unknown as Request;
     const res = mockResponse();
 
     await listar(req, res);
@@ -45,10 +45,31 @@ describe('adicionalController.listar', () => {
     expect(res.json).toHaveBeenCalledWith(adicionais);
   });
 
+  it('lista TODOS os adicionais (inclusive inativos) quando ?todos=true', async () => {
+    const adicionais = [
+      { id: 'ad-1', nome: 'Bacon', ativo: true },
+      { id: 'ad-2', nome: 'Cebola crispy', ativo: false },
+    ];
+    (prisma.adicional.findMany as jest.Mock).mockResolvedValue(adicionais);
+
+    const req = { query: { todos: 'true' } } as unknown as Request;
+    const res = mockResponse();
+
+    await listar(req, res);
+
+    expect(prisma.adicional.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {},
+        orderBy: { nome: 'asc' },
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(adicionais);
+  });
+
   it('retorna 500 quando ocorre erro interno', async () => {
     (prisma.adicional.findMany as jest.Mock).mockRejectedValue(new Error('DB caiu'));
 
-    const req = {} as Request;
+    const req = { query: {} } as unknown as Request;
     const res = mockResponse();
 
     await listar(req, res);

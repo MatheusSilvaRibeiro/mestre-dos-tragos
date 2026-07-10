@@ -74,6 +74,26 @@ describe('produtoController.listar', () => {
     );
   });
 
+  it('retorna TODOS os produtos (inclusive inativos) quando ?todos=true', async () => {
+    const produtosFalsos = [
+      { id: '1', nome: 'X-Burger', disponivel: true, ativo: true },
+      { id: '2', nome: 'X-Salada (descontinuado)', disponivel: false, ativo: false },
+    ];
+    (prisma.produto.findMany as jest.Mock).mockResolvedValue(produtosFalsos);
+
+    const req = { query: { todos: 'true' } } as unknown as Request;
+    const res = mockResponse();
+
+    await listar(req, res);
+
+    expect(prisma.produto.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {},
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(produtosFalsos);
+  });
+
   it('retorna 500 se o Prisma lançar um erro', async () => {
     (prisma.produto.findMany as jest.Mock).mockRejectedValue(new Error('DB caiu'));
 
