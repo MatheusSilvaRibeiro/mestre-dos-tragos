@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: mestre-dos-tragos-backend
+    ports:
+      - "3333:3333"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+
+  frontend:
+    build:
+      context: ./mestre-dos-tragos-web
+    container_name: mestre-dos-tragos-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

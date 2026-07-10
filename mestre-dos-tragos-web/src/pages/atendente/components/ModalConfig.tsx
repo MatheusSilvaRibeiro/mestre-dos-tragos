@@ -59,6 +59,7 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
   return (
     // Clicar no overlay fecha o modal
     <div
+      data-testid="atendente-modal-config"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
     >
@@ -101,6 +102,7 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
                     <button
                       key={pt.tamanho}
                       onClick={() => mudarTamanho(pt.tamanho)}
+                      data-testid={`atendente-tamanho-${pt.tamanho}`}
                       style={{ flex: 1, padding: '0.625rem 0.5rem', borderRadius: 'var(--radius-md)', border: `2px solid ${sel ? 'var(--brand-primary)' : 'var(--bg-elevated)'}`, background: sel ? 'rgba(245,158,11,0.1)' : 'var(--bg-elevated)', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center' }}
                     >
                       <div style={{ fontWeight: 800, fontSize: '1rem', color: sel ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{pt.tamanho}</div>
@@ -178,6 +180,7 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
                     <div
                       key={adicional.id}
                       onClick={() => toggleAdicional(adicional)}
+                      data-testid={`atendente-adicional-${adicional.nome}`}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: `1.5px solid ${sel ? 'var(--brand-primary)' : 'var(--bg-elevated)'}`, background: sel ? 'rgba(245,158,11,0.07)' : 'var(--bg-elevated)', cursor: 'pointer', transition: 'all 0.15s' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -199,9 +202,9 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
           <div>
             <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-tertiary)', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Quantidade</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <button onClick={() => setQtd(q => Math.max(1, q - 1))} style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid var(--bg-elevated)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
+              <button onClick={() => setQtd(q => Math.max(1, q - 1))} data-testid="atendente-qtd-menos-btn" style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid var(--bg-elevated)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
               <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', minWidth: 28, textAlign: 'center' }}>{quantidade}</span>
-              <button onClick={() => setQtd(q => q + 1)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--brand-primary)', color: '#000', cursor: 'pointer', fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+              <button onClick={() => setQtd(q => q + 1)} data-testid="atendente-qtd-mais-btn" style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--brand-primary)', color: '#000', cursor: 'pointer', fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
             </div>
           </div>
         </div>
@@ -219,6 +222,7 @@ export function ModalConfig({ produto, onConfirm, onClose }: Props) {
           </div>
           <button
             onClick={confirmar}
+            data-testid="atendente-confirmar-item-btn"
             disabled={!podeConfirmar}
             style={{ padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: 'none', background: podeConfirmar ? 'var(--brand-primary)' : 'var(--bg-surface)', color: podeConfirmar ? '#000' : 'var(--text-tertiary)', fontWeight: 800, fontSize: '0.875rem', cursor: podeConfirmar ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', transition: 'all 0.15s' }}
           >

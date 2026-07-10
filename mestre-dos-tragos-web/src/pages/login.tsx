@@ -25,7 +25,7 @@ export default function Login() {
 
       flushSync(() => login(token, funcionario));
 
-      if (funcionario.role === 'ADMIN') navigate('/selecionar', { replace: true });
+      if (funcionario.role === 'ADMIN') navigate('/admin', { replace: true });
       else if (funcionario.role === 'COZINHA') navigate('/cozinha', { replace: true });
       else navigate('/atendente', { replace: true });
     } catch (err) {
@@ -90,7 +90,7 @@ export default function Login() {
           </div>
 
           <div className="surface-elevated" style={{ padding: '1.75rem' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+            <form onSubmit={handleSubmit} data-testid="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
               <div className="input-wrapper">
                 <label className="input-label">Usuario</label>
                 <div className="input-icon-wrapper">
@@ -98,6 +98,7 @@ export default function Login() {
                   <input
                     type="text"
                     className="input-field has-icon"
+                    data-testid="login-usuario-input"
                     value={usuario}
                     onChange={e => setUsuario(e.target.value)}
                     required
@@ -115,6 +116,7 @@ export default function Login() {
                   <input
                     type="password"
                     className="input-field"
+                    data-testid="login-senha-input"
                     placeholder="Digite sua senha"
                     value={senha}
                     onChange={e => setSenha(e.target.value)}
@@ -125,7 +127,7 @@ export default function Login() {
               </div>
 
               {erro && (
-                <div className="alert alert-error">
+                <div className="alert alert-error" data-testid="login-error">
                   <span>⚠️</span> {erro}
                 </div>
               )}
@@ -134,6 +136,7 @@ export default function Login() {
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary"
+                data-testid="login-submit-btn"
                 style={{ width: '100%', padding: '0.75rem', marginTop: '0.25rem', fontSize: '0.9375rem' }}
               >
                 {loading
