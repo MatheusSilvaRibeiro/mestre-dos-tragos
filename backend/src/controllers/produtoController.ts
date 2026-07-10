@@ -21,9 +21,12 @@ const produtoInclude = {
 
 export async function listar(req: Request, res: Response) {
   try {
-    const { categoriaId, apenasDisponiveis } = req.query;
+    const { categoriaId, apenasDisponiveis, todos } = req.query;
 
-    const where: Prisma.ProdutoWhereInput = { ativo: true };
+    // "todos=true" — usado pela tela de admin, que precisa ver e poder
+    // reativar produtos desativados. Sem o parametro, mantem o filtro
+    // padrao usado pelo atendente ao montar pedido.
+    const where: Prisma.ProdutoWhereInput = todos === 'true' ? {} : { ativo: true };
 
     if (apenasDisponiveis === 'true') {
       where.disponivel = true;

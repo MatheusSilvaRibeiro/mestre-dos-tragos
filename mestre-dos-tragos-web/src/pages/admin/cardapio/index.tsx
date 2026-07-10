@@ -27,9 +27,9 @@ export default function Cardapio() {
     setLoad(true);
     try {
       const [p, c, a] = await Promise.all([
-        api.get('/produtos?limit=100'),
-        api.get('/categorias'),
-        api.get('/adicionais'),
+        api.get('/produtos?limit=100&todos=true'),
+        api.get('/categorias?todos=true'),
+        api.get('/adicionais?todos=true'),
       ]);
       setProd(p.data.produtos ?? p.data ?? []);
       setCateg(c.data.categorias ?? c.data ?? []);
