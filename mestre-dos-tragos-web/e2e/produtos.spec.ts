@@ -1,21 +1,20 @@
 import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE } from './helpers/storageState';
 import { nomeCategoriaTeste, nomeProdutoTeste } from './helpers/testData';
 import { capturarIdCriado, deletarCategoria, deletarProduto } from './helpers/cleanup';
 
+// Sessao de ADMIN pre-carregada (ver e2e/global-setup.ts) — sem login por
+// teste, poupa o rate limit de login do backend.
+test.use({ storageState: ADMIN_STORAGE_STATE });
+
 test.describe('Produtos', () => {
-  // IDs criados durante o teste atual — apagados via API no afterEach, pra
-  // nao deixar "Produto E2E ..." / "Categoria E2E ..." orfaos em producao.
-  // Ver e2e/helpers/cleanup.ts para o motivo disso existir.
   let produtosCriados: string[] = [];
   let categoriasCriadas: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     produtosCriados = [];
     categoriasCriadas = [];
-    await login(page, 'ADMIN');
-    await page.getByTestId('sidebar-link-cardapio').click();
-    await expect(page).toHaveURL('/admin/cardapio');
+    await page.goto('/admin/cardapio');
   });
 
   test.afterEach(async ({ page }) => {
@@ -23,12 +22,6 @@ test.describe('Produtos', () => {
     for (const id of categoriasCriadas) await deletarCategoria(page, id);
   });
 
-  /**
-   * O formulario de produto exige uma categoria ja cadastrada (select
-   * "Categoria *"). Este helper garante que existe pelo menos uma
-   * categoria ativa disponivel antes de abrir o modal de produto, e
-   * registra o id criado para limpeza automatica no afterEach.
-   */
   async function garantirCategoria(page: import('@playwright/test').Page) {
     const nomeCategoria = nomeCategoriaTeste();
     await page.getByTestId('cardapio-tab-categorias').click();
@@ -44,7 +37,6 @@ test.describe('Produtos', () => {
     return nomeCategoria;
   }
 
-  /** Preenche e salva o formulario de produto tipo LANCHE, registrando o id para limpeza. */
   async function criarProdutoLanche(page: import('@playwright/test').Page, nome: string, categoria: string, preco: string) {
     await page.getByTestId('produto-novo-btn').click();
     await page.getByTestId('produto-tipo-LANCHE').click();
@@ -119,12 +111,6 @@ test.describe('Produtos', () => {
     await page.reload();
     await page.getByTestId('cardapio-tab-produtos').click();
 
-    // DIAGNOSTICO: a tela de cardapio busca produtos com `?limit=100` sem
-    // paginacao real no frontend. Se acumular muitos produtos de teste
-    // orfaos (de execucoes anteriores a este cleanup automatico existir),
-    // o item recem-criado pode ficar fora da primeira pagina de 100.
-    // Isso loga o total retornado pela API para confirmar a hipotese caso
-    // esse teste volte a falhar.
     const respostaPromise = page.waitForResponse(
       (res) => res.url().includes('/produtos') && res.request().method() === 'GET',
       { timeout: 15_000 },
@@ -166,14 +152,7 @@ test.describe('Produtos', () => {
     await expect(itemEditado.getByTestId('produto-item-preco')).toContainText('25,50', { timeout: 15_000 });
   });
 
-  // BUG CONHECIDO (backend): mesmo padrao do bug ja confirmado em
-  // categorias.spec.ts — PUT /produtos/:id aparentemente nao persiste o
-  // campo `ativo`, apesar do toggleProduto() no frontend (mesmo padrao de
-  // `{ ...p, ativo: !p.ativo }`) enviar a mudanca corretamente. Suspeita e
-  // que seja o mesmo problema de backend afetando os tres recursos que usam
-  // esse padrao de toggle (categorias, produtos, adicionais). Ver issue de
-  // backend. Reativar quando corrigido.
-  test.fixme('deve alternar disponibilidade do produto', async ({ page }) => {
+  test('deve alternar disponibilidade do produto', async ({ page }) => {
     const nomeCategoria = await garantirCategoria(page);
     const nomeProduto = nomeProdutoTeste();
 
@@ -200,9 +179,6 @@ test.describe('Produtos', () => {
 
     await expect(page.getByTestId('produto-item').filter({ hasText: nomeProduto })).toHaveCount(0, { timeout: 15_000 });
 
-    // Ja foi excluido pela propria acao do teste — remove da lista de
-    // limpeza do afterEach para nao tentar deletar de novo (o DELETE
-    // repetido e inofensivo, mas evita ruido/erro desnecessario nos logs).
     produtosCriados = [];
   });
 });

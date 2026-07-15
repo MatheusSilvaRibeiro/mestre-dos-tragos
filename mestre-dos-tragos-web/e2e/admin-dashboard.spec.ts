@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE } from './helpers/storageState';
+
+// Sessao de ADMIN pre-carregada (ver e2e/global-setup.ts) — sem login por
+// teste, poupa o rate limit de login do backend.
+test.use({ storageState: ADMIN_STORAGE_STATE });
 
 test.describe('Dashboard / Admin', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page, 'ADMIN');
+    await page.goto('/admin');
   });
 
   test('deve acessar o painel administrativo após login como ADMIN', async ({ page }) => {

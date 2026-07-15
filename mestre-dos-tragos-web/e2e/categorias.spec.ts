@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE } from './helpers/storageState';
 import { nomeCategoriaTeste } from './helpers/testData';
 import { capturarIdCriado, deletarCategoria } from './helpers/cleanup';
+
+// Sessao de ADMIN pre-carregada (ver e2e/global-setup.ts) — sem login por
+// teste, poupa o rate limit de login do backend.
+test.use({ storageState: ADMIN_STORAGE_STATE });
 
 test.describe('Categorias', () => {
   // Ids criados durante o teste atual — apagados via API no afterEach, pra
@@ -10,9 +14,7 @@ test.describe('Categorias', () => {
 
   test.beforeEach(async ({ page }) => {
     categoriasCriadas = [];
-    await login(page, 'ADMIN');
-    await page.getByTestId('sidebar-link-cardapio').click();
-    await expect(page).toHaveURL('/admin/cardapio');
+    await page.goto('/admin/cardapio');
     await page.getByTestId('cardapio-tab-categorias').click();
   });
 
@@ -54,15 +56,7 @@ test.describe('Categorias', () => {
     await expect(page.getByTestId('categoria-item').filter({ hasText: nome })).toBeVisible({ timeout: 15_000 });
   });
 
-  // BUG CONHECIDO (backend): PUT /categorias/:id retorna 200 mas nao persiste
-  // o campo `ativo`. Confirmado via diagnostico (log da resposta da API abaixo)
-  // rodando contra a API real em producao. Nao e problema deste teste nem do
-  // frontend — o botao "Ativo/Inativo" reflete corretamente o que a API retorna
-  // no reload, mas a API simplesmente nao esta salvando a mudanca. O mesmo
-  // padrao foi observado em produtos.spec.ts, entao suspeita-se de causa
-  // compartilhada no backend. Ver issue separada de backend. Reativar quando
-  // corrigido.
-  test.fixme('deve desativar a categoria (o sistema atual não tem edição de nome — apenas ativar/desativar e excluir)', async ({ page }) => {
+  test('deve desativar a categoria (o sistema atual não tem edição de nome — apenas ativar/desativar e excluir)', async ({ page }) => {
     const nome = nomeCategoriaTeste();
 
     await criarCategoria(page, nome);
@@ -71,10 +65,6 @@ test.describe('Categorias', () => {
     await expect(item).toBeVisible({ timeout: 15_000 });
     await expect(item.getByTestId('categoria-item-toggle')).toHaveText('Ativo', { timeout: 15_000 });
 
-    // DIAGNOSTICO: capturamos a resposta real da API e qualquer dialog que
-    // apareca (o catch() do toggleCategoria() dispara um alert() em caso de
-    // erro, que o Playwright dispensa sozinho sem travar o teste — por isso
-    // o problema parecia "so lento" antes de investigar com isso aqui).
     page.on('dialog', (dialog) => {
       console.log(`[DIALOG] ${dialog.type()}: ${dialog.message()}`);
       dialog.accept();
