@@ -89,7 +89,8 @@ npm install
 npm run dev               # http://localhost:5173
 ```
  
-> ⚠️ A `baseURL` do Axios (`src/services/api.ts`) está fixa apontando para a API de produção — não lê variável de ambiente ainda. Rodar o frontend localmente hoje ainda depende da API de produção estar no ar. Detalhes em [Limitações conhecidas](#limitações-conhecidas).
+> Por padrão o frontend aponta para a API de produção. Para apontar para
+> um backend local, defina `VITE_API_URL` (ver `.env.example`).
  
 ### Docker
  
@@ -165,21 +166,18 @@ Branch a partir de `develop`, uma mudança por branch → validações locais �
 ---
  
 ## Limitações conhecidas
- 
-Um projeto sem limitações documentadas geralmente só significa que ninguém olhou fundo o suficiente. Estas quatro foram encontradas durante uma rodada de estabilização — cada uma tem uma causa raiz identificada, não é só "sabemos que existe":
- 
-- **`ci.yml` está malformado.** Falta a chave `on:` (gatilho) e o wrapper `jobs:` no topo do arquivo — sem esses campos, o GitHub Actions provavelmente nem reconhece isso como workflow válido. Também não há job de validação de frontend, só de backend. Corrigir antes de confiar no CI como gate de qualidade real.
-- **`baseURL` do Axios fixa em produção.** `src/services/api.ts` não lê nenhuma variável de ambiente — diferente do cliente Socket.IO no mesmo projeto, que já usa `VITE_API_URL` corretamente. Rodar o frontend local sempre depende da API de produção estar no ar.
+
+Um projeto sem limitações documentadas geralmente só significa que ninguém olhou fundo o suficiente. Estas foram encontradas durante rodadas de estabilização — cada uma tem uma causa raiz identificada, não é só "sabemos que existe":
+
 - **Sem ambiente de staging.** A suíte E2E roda contra dados reais de produção. Isso já causou acúmulo de dados de teste no banco (mitigado com scripts de auditoria/limpeza — ver acima), mas o risco estrutural continua enquanto não houver um ambiente separado.
 - **Cold start no plano gratuito do Render.** O backend "dorme" após inatividade; o primeiro request do dia pode levar dezenas de segundos, o que afeta diretamente os testes E2E e a primeira impressão de quem acessa.
----
+- **Rate limit da API pode ser restritivo demais para uso real.** O login aceita só 5 tentativas por IP a cada 15 minutos, e a API em geral limita a 100 requisições/15min por IP. Em um estabelecimento com vários funcionários atrás do mesmo roteador, isso pode gerar bloqueios legítimos indesejados. Vale revisar os limites com dados de uso real antes do lançamento.
  
 ## Roadmap
  
-**Concluído:** arquitetura full stack, JWT + 3 perfis, cardápio, WebSocket, dashboard, relatórios, testes unitários e E2E, Swagger, hardening de segurança, logs estruturados, health check com verificação real de banco, Docker, CodeQL, Dependabot, CI.
- 
-**Próximos passos:** corrigir `ci.yml`, tornar a `baseURL` do frontend configurável por ambiente, ambiente de staging dedicado, screenshots reais neste README, versionamento de API, monitoramento e métricas.
- 
+**Concluído:** arquitetura full stack, JWT + 3 perfis, cardápio, WebSocket, dashboard, relatórios, testes unitários e E2E, Swagger, hardening de segurança, logs estruturados, health check com verificação real de banco, Docker, CodeQL, Dependabot, CI (`ci.yml` corrigido, com jobs de backend e frontend), `baseURL` do frontend configurável via `VITE_API_URL`, gestão de itens inativos (ver/reativar).
+---
+**Próximos passos:** mergear e validar a melhoria de reuso de sessão de login na suíte E2E (reduz consumo de rate limit), revisar os limites de rate limit com dados de uso real, ambiente de staging dedicado, screenshots reais neste README, versionamento de API, monitoramento e métricas.
 ---
  
 <div align="center">
