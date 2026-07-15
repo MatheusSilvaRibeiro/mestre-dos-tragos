@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+// Mesmo padrao ja usado pelo Socket.IO (ver src/pages/cozinha/index.tsx):
+// le VITE_API_URL do ambiente, com o mesmo valor de producao como fallback
+// caso a variavel nao esteja definida. Antes disso, essa baseURL estava
+// fixa no codigo — rodar o frontend localmente sempre dependia da API de
+// producao estar no ar, mesmo com um backend local rodando do lado.
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://mestre-dos-tragos-api.onrender.com';
+
 const api = axios.create({
-  baseURL: 'https://mestre-dos-tragos-api.onrender.com/api',
+  baseURL: `${API_BASE_URL}/api`,
 });
 
 // 
