@@ -11,6 +11,18 @@ export default defineConfig({
   expect: {
     timeout: 5_000,
   },
+  // Roda os 3 logins reais (ADMIN/ATENDENTE/COZINHA) uma unica vez antes
+  // de toda a suite, salvando sessao em e2e/.auth/*.json. Existe por causa
+  // do rate limit de login do backend (5 tentativas/15min por IP) — ver
+  // e2e/helpers/storageState.ts.
+  globalSetup: './e2e/global-setup.ts',
+  // O backend tambem tem um rate limit GERAL (100 requisicoes/15min por
+  // IP, todas as rotas — nao so login). Com o padrao de 4+ workers em
+  // paralelo, a suite inteira facilmente passa de 100 requisicoes nos
+  // primeiros segundos (cada criacao de categoria sozinha ja faz 4 —
+  // 1 POST + 3 GETs de recarga). Reduzido pra 2 workers pra espalhar as
+  // requisicoes ao longo do tempo em vez de rajar tudo de uma vez.
+  workers: 2,
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',

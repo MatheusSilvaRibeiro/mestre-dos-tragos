@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE } from './helpers/storageState';
 import { nomeAdicionalTeste } from './helpers/testData';
 import { capturarIdCriado, deletarAdicional } from './helpers/cleanup';
 
+// Sessao de ADMIN pre-carregada (ver e2e/global-setup.ts) — sem login por
+// teste, poupa o rate limit de login do backend.
+test.use({ storageState: ADMIN_STORAGE_STATE });
+
 test.describe('Adicionais', () => {
-  // Ids criados durante o teste atual — apagados via API no afterEach, pra
-  // nao deixar "Adicional E2E ..." orfao em producao. Ver e2e/helpers/cleanup.ts.
   let adicionaisCriados: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     adicionaisCriados = [];
-    await login(page, 'ADMIN');
-    await page.getByTestId('sidebar-link-cardapio').click();
-    await expect(page).toHaveURL('/admin/cardapio');
+    await page.goto('/admin/cardapio');
     await page.getByTestId('cardapio-tab-adicionais').click();
   });
 
@@ -20,7 +20,6 @@ test.describe('Adicionais', () => {
     for (const id of adicionaisCriados) await deletarAdicional(page, id);
   });
 
-  /** Preenche e salva o formulario de adicional, registrando o id para limpeza. */
   async function criarAdicional(page: import('@playwright/test').Page, nome: string, preco: string) {
     const idPromise = capturarIdCriado(page, '/adicionais');
     await page.getByTestId('adicional-nome-input').fill(nome);
@@ -48,15 +47,7 @@ test.describe('Adicionais', () => {
     await expect(page.getByTestId('adicional-item').filter({ hasText: nome })).toBeVisible({ timeout: 15_000 });
   });
 
-// BUG CONHECIDO (backend), CONFIRMADO: mesmo sintoma exato de
-  // categorias.spec.ts e produtos.spec.ts — PUT /adicionais/:id retorna
-  // sucesso mas nao persiste o campo `ativo`. Rodado isoladamente e
-  // reproduziu o mesmo comportamento: botao continua "Ativo" apos o
-  // toggle, dezenas de tentativas dentro do timeout. Confirma que o bug
-  // e compartilhado entre os tres recursos (categorias, produtos,
-  // adicionais), nao especifico de um so. Ver issue de backend. Reativar
-  // quando corrigido.
-   test.fixme('deve desativar o adicional (não há edição de nome/preço na tela atual — apenas ativar/desativar e excluir)', async ({ page }) => {
+  test('deve desativar o adicional (não há edição de nome/preço na tela atual — apenas ativar/desativar e excluir)', async ({ page }) => {
     const nome = nomeAdicionalTeste();
 
     await criarAdicional(page, nome, '3.50');
@@ -81,8 +72,6 @@ test.describe('Adicionais', () => {
 
     await expect(page.getByTestId('adicional-item').filter({ hasText: nome })).toHaveCount(0, { timeout: 15_000 });
 
-    // Ja foi excluido pela propria acao do teste — remove da lista de
-    // limpeza do afterEach para nao tentar deletar de novo.
     adicionaisCriados = [];
   });
 });

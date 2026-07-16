@@ -8,8 +8,10 @@ import { criarAdicionalSchema, editarAdicionalSchema } from '../validators/adici
 // ─────────────────────────────────────────────────────────
 export async function listar(req: Request, res: Response) {
   try {
+    const mostrarTodos = req.query.todos === 'true';
+
     const adicionais = await prisma.adicional.findMany({
-      where: { ativo: true },
+      where: mostrarTodos ? {} : { ativo: true },
       include: {
         precoPorTamanho: { orderBy: { tamanho: 'asc' } },
       },

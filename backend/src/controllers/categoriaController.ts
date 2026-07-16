@@ -9,8 +9,14 @@ import { categoriaSchema } from '../validators/categoriaSchemas';
 
 export async function listar(req: Request, res: Response) {
   try {
+    // "?todos=true" — usado pela tela de admin, que precisa ver e poder
+    // reativar categorias desativadas. Sem o parametro, mantem o filtro
+    // padrao (usado pelo atendente ao montar pedido, que nunca deve ver
+    // uma categoria desativada).
+    const mostrarTodos = req.query.todos === 'true';
+
     const categorias = await prisma.categoria.findMany({
-      where: { ativo: true },
+      where: mostrarTodos ? {} : { ativo: true },
       orderBy: { nome: 'asc' }
     });
 
@@ -137,4 +143,4 @@ export async function desativar(req: Request, res: Response) {
   } catch  {
     return res.status(500).json({ erro: 'Erro ao desativar categoria' });
   }
-}
+} 
