@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE, ATENDENTE_STORAGE_STATE } from './helpers/storageState';
 import { nomeCategoriaTeste, nomeProdutoTeste } from './helpers/testData';
 import { capturarIdCriado, deletarCategoria, deletarProduto } from './helpers/cleanup';
 
@@ -10,18 +10,25 @@ import { capturarIdCriado, deletarCategoria, deletarProduto } from './helpers/cl
  * cria nada. Como produtos.spec.ts agora limpa (via afterEach) tudo que cria,
  * nao da mais pra contar com "sobras" de outra suite. Por isso aqui a gente
  * faz um seed proprio: cria 1 categoria + 1 produto tipo LANCHE uma unica vez
- * antes de todos os testes (beforeAll, logado como ADMIN numa aba separada),
- * e apaga os dois no final (afterAll).
+ * antes de todos os testes (beforeAll, sessao de ADMIN pre-carregada), e
+ * apaga os dois no final (afterAll).
  */
 test.describe('Pedidos / Atendimento', () => {
+  // Sessao de ATENDENTE pre-carregada (ver e2e/global-setup.ts) — sem
+  // login por teste, poupa o rate limit de login do backend.
+  test.use({ storageState: ATENDENTE_STORAGE_STATE });
+
   let categoriaId: string | null = null;
   let produtoId: string | null = null;
   let paginaSeed: Page;
 
   test.beforeAll(async ({ browser }) => {
-    paginaSeed = await browser.newPage();
-    await login(paginaSeed, 'ADMIN');
-    await paginaSeed.getByTestId('sidebar-link-cardapio').click();
+    // Sessao de ADMIN so pro seed — contexto separado, nao interfere na
+    // sessao de ATENDENTE que os testes usam.
+    const contextoSeed = await browser.newContext({ storageState: ADMIN_STORAGE_STATE });
+    paginaSeed = await contextoSeed.newPage();
+
+    await paginaSeed.goto('/admin/cardapio');
     await expect(paginaSeed).toHaveURL('/admin/cardapio');
 
     const nomeCategoria = nomeCategoriaTeste('Categoria E2E Seed Pedidos');
@@ -52,7 +59,7 @@ test.describe('Pedidos / Atendimento', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await login(page, 'ATENDENTE');
+    await page.goto('/atendente');
     await expect(page).toHaveURL('/atendente');
   });
 

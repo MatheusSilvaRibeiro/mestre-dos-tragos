@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { login, preencherLogin, expectSessaoPersistida } from './helpers/auth';
 import { credenciaisAdmin } from './helpers/testData';
+import { ADMIN_STORAGE_STATE } from './helpers/storageState';
+
+// Sessao de ADMIN pre-carregada (ver e2e/global-setup.ts). Nao interfere
+// nos testes abaixo: /login sempre renderiza o formulario normalmente,
+// esteja o usuario autenticado ou nao (nao ha redirect automatico dessa
+// rota). Os testes que precisam validar o FLUXO de login de verdade
+// ("credenciais invalidas" e "login valido") continuam fazendo login real
+// pela UI, independente do que estiver pre-carregado.
+test.use({ storageState: ADMIN_STORAGE_STATE });
 
 test('deve carregar a aplicação', async ({ page }) => {
   await page.goto('/');
@@ -37,7 +46,10 @@ test.describe('Login', () => {
   });
 
   test('deve persistir o usuário autenticado após recarregar a página', async ({ page }) => {
-    await login(page, 'ADMIN');
+    // Sessao ja vem pre-carregada (storageState) — nao precisa logar de
+    // novo, o que importa aqui e confirmar que o reload nao derruba a
+    // sessao persistida em localStorage.
+    await page.goto('/admin');
     await expect(page).toHaveURL('/admin');
 
     await page.reload();

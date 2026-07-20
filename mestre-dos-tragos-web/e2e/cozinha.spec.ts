@@ -1,80 +1,82 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login } from './helpers/auth';
+import { ADMIN_STORAGE_STATE, ATENDENTE_STORAGE_STATE, COZINHA_STORAGE_STATE } from './helpers/storageState';
 import { nomeCategoriaTeste, nomeProdutoTeste } from './helpers/testData';
 import { capturarIdCriado, deletarCategoria, deletarProduto } from './helpers/cleanup';
 
 /**
  * Suite da Cozinha.
  *
- * IMPORTANTE: esta suite tinha uma dependencia implicita de pedidos.spec.ts
- * ja ter rodado antes (para existir um pedido PENDENTE). Isso funcionava
- * rodando os arquivos um de cada vez, mas quebrou ao rodar `npm run test:e2e`
- * sem filtro — o Playwright usa 4 workers em paralelo por padrao, entao
- * arquivos diferentes rodam ao mesmo tempo, sem ordem garantida entre eles.
- *
- * Corrigido criando um seed proprio aqui: cria categoria + produto (ADMIN),
- * loga como ATENDENTE e envia um pedido de verdade, tudo isso uma unica vez
- * em beforeAll — assim esta suite nao depende de nenhuma outra ter rodado
- * antes, e pode ser executada isoladamente ou em paralelo sem problema.
+ * Tem seed proprio: cria categoria + produto (sessao de ADMIN pre-carregada)
+ * e envia um pedido de verdade (sessao de ATENDENTE pre-carregada), tudo
+ * isso uma unica vez em beforeAll — assim esta suite nao depende de
+ * nenhuma outra ter rodado antes, e pode ser executada isoladamente ou em
+ * paralelo sem problema. Ver e2e/helpers/storageState.ts.
  */
 test.describe('Cozinha', () => {
+  // Sessao de COZINHA pre-carregada para os testes em si.
+  test.use({ storageState: COZINHA_STORAGE_STATE });
+
   let categoriaId: string | null = null;
   let produtoId: string | null = null;
-  let paginaSeed: Page;
+  let paginaAdmin: Page;
 
   test.beforeAll(async ({ browser }) => {
-    paginaSeed = await browser.newPage();
+    // 1. Cria categoria + produto — contexto separado com sessao de ADMIN.
+    const contextoAdmin = await browser.newContext({ storageState: ADMIN_STORAGE_STATE });
+    paginaAdmin = await contextoAdmin.newPage();
 
-    // 1. Cria categoria + produto como ADMIN.
-    await login(paginaSeed, 'ADMIN');
-    await paginaSeed.getByTestId('sidebar-link-cardapio').click();
-    await expect(paginaSeed).toHaveURL('/admin/cardapio');
+    await paginaAdmin.goto('/admin/cardapio');
+    await expect(paginaAdmin).toHaveURL('/admin/cardapio');
 
     const nomeCategoria = nomeCategoriaTeste('Categoria E2E Seed Cozinha');
-    await paginaSeed.getByTestId('cardapio-tab-categorias').click();
-    const idCategoriaPromise = capturarIdCriado(paginaSeed, '/categorias');
-    await paginaSeed.getByTestId('categoria-nome-input').fill(nomeCategoria);
-    await paginaSeed.getByTestId('categoria-criar-btn').click();
+    await paginaAdmin.getByTestId('cardapio-tab-categorias').click();
+    const idCategoriaPromise = capturarIdCriado(paginaAdmin, '/categorias');
+    await paginaAdmin.getByTestId('categoria-nome-input').fill(nomeCategoria);
+    await paginaAdmin.getByTestId('categoria-criar-btn').click();
     categoriaId = await idCategoriaPromise;
-    await expect(paginaSeed.getByTestId('categoria-item').filter({ hasText: nomeCategoria })).toBeVisible({ timeout: 15_000 });
+    await expect(paginaAdmin.getByTestId('categoria-item').filter({ hasText: nomeCategoria })).toBeVisible({ timeout: 15_000 });
 
     const nomeProduto = nomeProdutoTeste('Produto E2E Seed Cozinha');
-    await paginaSeed.getByTestId('cardapio-tab-produtos').click();
-    await paginaSeed.getByTestId('produto-novo-btn').click();
-    await paginaSeed.getByTestId('produto-tipo-LANCHE').click();
-    await paginaSeed.getByTestId('produto-nome-input').fill(nomeProduto);
-    await paginaSeed.getByTestId('produto-preco-input').fill('9.90');
-    await paginaSeed.getByTestId('produto-categoria-select').selectOption({ label: nomeCategoria });
-    const idProdutoPromise = capturarIdCriado(paginaSeed, '/produtos');
-    await paginaSeed.getByTestId('produto-salvar-btn').click();
+    await paginaAdmin.getByTestId('cardapio-tab-produtos').click();
+    await paginaAdmin.getByTestId('produto-novo-btn').click();
+    await paginaAdmin.getByTestId('produto-tipo-LANCHE').click();
+    await paginaAdmin.getByTestId('produto-nome-input').fill(nomeProduto);
+    await paginaAdmin.getByTestId('produto-preco-input').fill('9.90');
+    await paginaAdmin.getByTestId('produto-categoria-select').selectOption({ label: nomeCategoria });
+    const idProdutoPromise = capturarIdCriado(paginaAdmin, '/produtos');
+    await paginaAdmin.getByTestId('produto-salvar-btn').click();
     produtoId = await idProdutoPromise;
-    await expect(paginaSeed.getByTestId('produto-modal')).toHaveCount(0, { timeout: 15_000 });
+    await expect(paginaAdmin.getByTestId('produto-modal')).toHaveCount(0, { timeout: 15_000 });
 
-    // 2. Loga como ATENDENTE (login() faz goto('/login') + submit, sobrescreve
-    // a sessao ADMIN sem precisar de logout explicito) e envia um pedido real
-    // com esse produto, para existir algo PENDENTE quando os testes rodarem.
-    await login(paginaSeed, 'ATENDENTE');
-    await paginaSeed.getByTestId('atendente-busca-input').fill(nomeProduto);
-    const cardSeed = paginaSeed.getByTestId('atendente-produto-card').filter({ hasText: nomeProduto });
+    // 2. Envia um pedido real com esse produto — contexto separado com
+    // sessao de ATENDENTE, pra existir algo PENDENTE quando os testes rodarem.
+    const contextoAtendente = await browser.newContext({ storageState: ATENDENTE_STORAGE_STATE });
+    const paginaAtendente = await contextoAtendente.newPage();
+
+    await paginaAtendente.goto('/atendente');
+    await paginaAtendente.getByTestId('atendente-busca-input').fill(nomeProduto);
+    const cardSeed = paginaAtendente.getByTestId('atendente-produto-card').filter({ hasText: nomeProduto });
     await expect(cardSeed).toBeVisible({ timeout: 15_000 });
     await cardSeed.click();
-    await expect(paginaSeed.getByTestId('atendente-modal-config')).toBeVisible({ timeout: 15_000 });
-    await paginaSeed.getByTestId('atendente-confirmar-item-btn').click();
-    await paginaSeed.getByTestId('carrinho-enviar-btn').click();
-    await expect(paginaSeed.getByTestId('carrinho-sucesso-alert')).toBeVisible({ timeout: 30_000 });
+    await expect(paginaAtendente.getByTestId('atendente-modal-config')).toBeVisible({ timeout: 15_000 });
+    await paginaAtendente.getByTestId('atendente-confirmar-item-btn').click();
+    await paginaAtendente.getByTestId('carrinho-enviar-btn').click();
+    await expect(paginaAtendente.getByTestId('carrinho-sucesso-alert')).toBeVisible({ timeout: 30_000 });
+
+    await paginaAtendente.close();
   });
 
   test.afterAll(async () => {
     // O pedido criado no seed e consumido pelo proprio fluxo dos testes
     // (aceitar -> em preparo -> finalizar -> some da fila ativa). Categoria
     // e produto de seed, por sua vez, precisam de limpeza explicita.
-    if (produtoId) await deletarProduto(paginaSeed, produtoId);
-    if (categoriaId) await deletarCategoria(paginaSeed, categoriaId);
-    await paginaSeed.close();
+    if (produtoId) await deletarProduto(paginaAdmin, produtoId);
+    if (categoriaId) await deletarCategoria(paginaAdmin, categoriaId);
+    await paginaAdmin.close();
   });
 
   test.beforeEach(async ({ page }) => {
-    await login(page, 'COZINHA');
+    await page.goto('/cozinha');
     await expect(page).toHaveURL('/cozinha');
   });
 
