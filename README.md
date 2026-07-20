@@ -177,7 +177,7 @@ Um projeto sem limitações documentadas geralmente só significa que ninguém o
  
 ## Roadmap
  
-**Concluído:** arquitetura full stack, JWT + 3 perfis, cardápio, WebSocket, dashboard, relatórios, testes unitários e E2E, Swagger, hardening de segurança, logs estruturados, health check com verificação real de banco, Docker, CodeQL, Dependabot, CI (`ci.yml` corrigido, com jobs de backend e frontend), `baseURL` do frontend configurável via `VITE_API_URL`, gestão de itens inativos (ver/reativar), suíte E2E com sessão pré-carregada rodando isolada contra banco de teste dedicado + build de produção, rate limit configurável via env, migration automática no deploy (`prisma migrate deploy` no Pre-Deploy Command do Render).
+**Concluído:** arquitetura full stack, JWT + 3 perfis, cardápio, WebSocket, dashboard, relatórios, testes unitários e E2E, Swagger, hardening de segurança, logs estruturados, health check com verificação real de banco, Docker, CodeQL, Dependabot, CI (`ci.yml` corrigido, com jobs de backend e frontend), `baseURL` do frontend configurável via `VITE_API_URL`, gestão de itens inativos (ver/reativar), suíte E2E com sessão pré-carregada rodando isolada contra banco de teste dedicado + build de produção, rate limit configurável via env, migration automática no deploy (`prisma migrate deploy` embutido no Build Command do Render — o Pre-Deploy Command dedicado é recurso pago, indisponível no plano gratuito).
 ---
 **Próximos passos:** ambiente de staging deployado (Render/Vercel separados, não só banco de teste), screenshots reais neste README, versionamento de API, monitoramento e métricas.
 ---
