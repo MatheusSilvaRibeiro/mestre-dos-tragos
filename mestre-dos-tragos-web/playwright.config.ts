@@ -28,6 +28,20 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
+  // Roda contra o BUILD de producao (build + preview), nao contra `vite dev`.
+  // Em dev o React StrictMode roda os efeitos duas vezes de proposito (monta,
+  // desmonta, monta de novo) — isso duplica a conexao do WebSocket da cozinha
+  // e gera falsos-negativos (status de pedido nao refletindo na tela dentro
+  // do timeout). Contra o build de producao (sem esse double-invoke) a
+  // mesma suite passa limpa. O backend fica de fora de proposito — ele
+  // depende de qual banco usar (producao ou o de dev), decisao que nao deve
+  // ficar escondida aqui; suba-o manualmente antes de rodar os testes.
+  webServer: {
+    command: 'npm run build && npx vite preview --port 5173',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
   projects: [
     {
       name: 'chromium',
