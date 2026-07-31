@@ -4,6 +4,7 @@ import api from '../../services/api';
 import type { Pedido } from './types';
 import PedidoCard from './PedidoCard';
 import ComandaImpressao from './ComandaImpressao';
+import { tocarSomNotificacao } from './notificationSound';
 
 export default function Cozinha() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -37,6 +38,8 @@ export default function Cozinha() {
 
     s.on('pedido:novo', (p: Pedido) => {
       if (!['PENDENTE', 'EM_PREPARO'].includes(p.status)) return;
+
+      tocarSomNotificacao();
 
       setPedidos(prev => {
         if (prev.find(x => x.id === p.id)) return prev;
