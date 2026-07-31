@@ -38,7 +38,8 @@ const allowedOrigins = [
   // a lista deve ter so o dominio real do frontend (FRONTEND_URL).
   ...(process.env.NODE_ENV !== 'production'
     ? [
-        'http://localhost:5173', // npm run dev (frontend, dia a dia)
+        'http://localhost:5173', // npm run dev (porta padrao do Vite)
+        'http://localhost:5174', // fallback do Vite quando a 5173 ja esta ocupada
         'http://localhost:5199', // npm run test:e2e (build de preview do Playwright)
       ]
     : []),
