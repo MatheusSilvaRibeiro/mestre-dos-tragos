@@ -136,21 +136,21 @@ describe('adicionalController.criar', () => {
     await criar(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ erro: 'Campos obrigatórios: nome, preco' });
+    expect(res.json).toHaveBeenCalledWith({ erro: 'Campos obrigatórios: nome, preco, grupoPreco' });
   });
 
   it('cria um adicional simples, sem preço por tamanho', async () => {
-    const adicionalCriado = { id: 'ad-1', nome: 'Bacon', preco: 3 };
+    const adicionalCriado = { id: 'ad-1', nome: 'Bacon', preco: 3, grupoPreco: 'LANCHES' };
     (prisma.adicional.create as jest.Mock).mockResolvedValue(adicionalCriado);
 
-    const req = { body: { nome: 'Bacon', preco: 3 } } as unknown as Request;
+    const req = { body: { nome: 'Bacon', preco: 3, grupoPreco: 'LANCHES' } } as unknown as Request;
     const res = mockResponse();
 
     await criar(req, res);
 
     expect(prisma.adicional.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: { nome: 'Bacon', preco: 3 },
+        data: { nome: 'Bacon', preco: 3, grupoPreco: 'LANCHES' },
       })
     );
     expect(res.status).toHaveBeenCalledWith(201);
@@ -168,6 +168,7 @@ describe('adicionalController.criar', () => {
       body: {
         nome: 'Queijo Extra',
         preco: 0,
+        grupoPreco: 'PORCOES',
         precoPorTamanho: [
           { tamanho: 'P', preco: 2 },
           { tamanho: 'G', preco: 4 },
@@ -182,6 +183,7 @@ describe('adicionalController.criar', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           nome: 'Queijo Extra',
+          grupoPreco: 'PORCOES',
           precoPorTamanho: {
             create: [
               { tamanho: 'P', preco: 2 },
@@ -197,7 +199,7 @@ describe('adicionalController.criar', () => {
   it('retorna 500 quando ocorre erro interno', async () => {
     (prisma.adicional.create as jest.Mock).mockRejectedValue(new Error('DB caiu'));
 
-    const req = { body: { nome: 'Bacon', preco: 3 } } as unknown as Request;
+    const req = { body: { nome: 'Bacon', preco: 3, grupoPreco: 'LANCHES' } } as unknown as Request;
     const res = mockResponse();
 
     await criar(req, res);
