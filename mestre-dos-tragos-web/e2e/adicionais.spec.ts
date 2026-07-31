@@ -24,6 +24,7 @@ test.describe('Adicionais', () => {
     const idPromise = capturarIdCriado(page, '/adicionais');
     await page.getByTestId('adicional-nome-input').fill(nome);
     await page.getByTestId('adicional-preco-input').fill(preco);
+    await page.getByTestId('adicional-grupo-LANCHES').click();
     await page.getByTestId('adicional-criar-btn').click();
     const id = await idPromise;
     if (id) adicionaisCriados.push(id);
