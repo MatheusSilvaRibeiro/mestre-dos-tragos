@@ -24,7 +24,13 @@ export default defineConfig({
   // requisicoes ao longo do tempo em vez de rajar tudo de uma vez.
   workers: 2,
   use: {
-    baseURL: 'http://localhost:5173',
+    // Porta dedicada, só pra esse build de preview do E2E — nunca a 5173
+    // padrao do Vite, que colide com qualquer outro projeto local rodando
+    // "vite dev" (o Playwright so checa se a porta ja responde, nao QUAL
+    // app esta nela, entao uma colisao faz os testes rodarem contra o
+    // app errado sem erro nenhum, so timeout esperando seletores que
+    // nunca vao aparecer).
+    baseURL: 'http://localhost:5199',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -37,8 +43,8 @@ export default defineConfig({
   // depende de qual banco usar (producao ou o de dev), decisao que nao deve
   // ficar escondida aqui; suba-o manualmente antes de rodar os testes.
   webServer: {
-    command: 'npm run build && npx vite preview --port 5173',
-    url: 'http://localhost:5173',
+    command: 'npm run build && npx vite preview --port 5199',
+    url: 'http://localhost:5199',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

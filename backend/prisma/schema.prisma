@@ -32,6 +32,14 @@ enum TipoProduto {
   PORCAO_MISTA
 }
 
+// Agrupa adicionais pelo modelo de cobranca compativel — LANCHES usa
+// preco fixo, PORCOES (batata frita/porcao mista) usa preco por tamanho.
+// null = adicional antigo, ainda sem grupo definido (aparece pra qualquer tipo).
+enum GrupoPrecoAdicional {
+  LANCHES
+  PORCOES
+}
+
 enum Tamanho {
   P
   M
@@ -101,10 +109,11 @@ model ProdutoTamanho {
 }
 
 model Adicional {
-  id        String  @id @default(uuid())
-  nome      String
-  preco     Decimal @db.Decimal(10, 2)
-  ativo     Boolean @default(true)
+  id         String               @id @default(uuid())
+  nome       String
+  preco      Decimal              @db.Decimal(10, 2)
+  ativo      Boolean              @default(true)
+  grupoPreco GrupoPrecoAdicional?
 
   precoPorTamanho AdicionalTamanho[]
   produtos        ProdutoAdicional[]

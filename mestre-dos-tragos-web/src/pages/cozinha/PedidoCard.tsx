@@ -6,6 +6,7 @@ interface Props {
   agora:       number;
   onAceitar:   (id: string) => void;
   onFinalizar: (id: string) => void;
+  onImprimir:  (pedido: Pedido) => void;
 }
 
 function tempoEmMinutos(criadoEm: string, agora: number): string {
@@ -14,7 +15,7 @@ function tempoEmMinutos(criadoEm: string, agora: number): string {
   return `${mins} min`;
 }
 
-export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Props) {
+export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar, onImprimir }: Props) {
   const cfg        = STATUS_CONFIG[pedido.status];
   const mins       = Math.floor((agora - new Date(pedido.criadoEm).getTime()) / 60000);
   const urgente    = mins >= 10;
@@ -22,67 +23,52 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
 
   const itens = pedido.itens ?? [];
 
+  const classeCard = [
+    'pedido-card',
+    !isPendente && 'pedido-card--em-preparo',
+    urgente && 'pedido-card--urgente',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div data-testid="cozinha-pedido-card" data-pedido-id={pedido.id} style={{
-      background:    '#1a1f2e',
-      borderLeft:    `4px solid ${urgente ? '#ef4444' : cfg.cor}`,
-      borderRadius:  '8px',
-      boxShadow:     '0 2px 8px rgba(0,0,0,0.45)',
-      padding:       '1rem',
-      display:       'flex',
-      flexDirection: 'column',
-      gap:           '0.5rem',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div data-testid="cozinha-pedido-card" data-pedido-id={pedido.id} className={classeCard}>
+      <div className="pedido-card-header">
         <div>
-          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#e2e8f0' }}>
-            {pedido.nomeCliente ?? 'Sem nome'}
-          </div>
-          <div style={{ fontSize: '0.6875rem', color: '#475569' }}>
-            #{pedido.id.slice(-6).toUpperCase()}
-          </div>
+          <div className="pedido-card-cliente">{pedido.nomeCliente ?? 'Sem nome'}</div>
+          <div className="pedido-card-id">#{pedido.id.slice(-6).toUpperCase()}</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: urgente ? '#ef4444' : '#475569' }}>
+        <div className="pedido-card-meta">
+          <span className={`pedido-card-tempo ${urgente ? 'pedido-card-tempo--urgente' : ''}`}>
             {tempoEmMinutos(pedido.criadoEm, agora)}
           </span>
-          <span data-testid="cozinha-pedido-status" style={{ padding: '0.125rem 0.5rem', borderRadius: 999, background: cfg.bg, color: cfg.cor, fontWeight: 700, fontSize: '0.6875rem' }}>
+          <span data-testid="cozinha-pedido-status" className={`badge ${isPendente ? 'badge-brand' : 'badge-info'}`}>
             {cfg.label}
           </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      <div className="pedido-card-itens">
         {itens.map((item, i) => {
           const adicionais = item.adicionais ?? [];
           const sabores    = item.sabores    ?? [];
 
           return (
-            <div
-              key={i}
-              style={{
-                paddingBottom: '0.4rem',
-                borderBottom:  i < itens.length - 1 ? '1px solid #1e2535' : 'none',
-              }}
-            >
-              <div style={{ fontWeight: 700, color: '#e2e8f0', fontSize: '0.875rem' }}>
+            <div className="pedido-card-item" key={i}>
+              <div className="pedido-card-item-nome">
                 {item.quantidade}x {item.produto?.nome ?? 'Produto removido'}
                 {item.tamanho && (
-                  <span style={{ fontWeight: 400, color: '#475569', fontSize: '0.8125rem' }}>
-                    {' '}({item.tamanho})
-                  </span>
+                  <span className="pedido-card-item-tamanho"> ({item.tamanho})</span>
                 )}
               </div>
 
               {adicionais.length > 0 && (
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.15rem' }}>
+                <div className="pedido-card-adicionais">
                   + {adicionais.map(a => a.adicional?.nome ?? '').join(', ')}
                 </div>
               )}
 
               {sabores.length > 0 && (
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.15rem' }}>
+                <div className="pedido-card-sabores">
                   {sabores.map(s => s.nome ?? '').join(' · ')}
                 </div>
               )}
@@ -92,33 +78,41 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
       </div>
 
       {pedido.observacoes && (
-        <div style={{ padding: '0.5rem 0.75rem', borderRadius: '6px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b', fontSize: '0.8125rem' }}>
+        <div className="alert alert-warning">
           📝 {pedido.observacoes}
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid #1e2535' }}>
-        <span style={{ fontWeight: 800, color: '#f59e0b', fontSize: '0.9rem' }}>
-          {moeda(pedido.valorTotal)}
-        </span>
+      <div className="pedido-card-footer">
+        <span className="pedido-card-total">{moeda(pedido.valorTotal)}</span>
 
-        {isPendente ? (
+        <div className="pedido-card-acoes">
           <button
-            onClick={() => onAceitar(pedido.id)}
-            data-testid="cozinha-aceitar-btn"
-            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
+            onClick={() => onImprimir(pedido)}
+            data-testid="cozinha-imprimir-btn"
+            className="btn btn-ghost"
           >
-            Aceitar
+            🖨️ Imprimir
           </button>
-        ) : (
-          <button
-            onClick={() => onFinalizar(pedido.id)}
-            data-testid="cozinha-finalizar-btn"
-            style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
-          >
-            Pronto
-          </button>
-        )}
+
+          {isPendente ? (
+            <button
+              onClick={() => onAceitar(pedido.id)}
+              data-testid="cozinha-aceitar-btn"
+              className="btn btn-primary btn-lg"
+            >
+              Aceitar
+            </button>
+          ) : (
+            <button
+              onClick={() => onFinalizar(pedido.id)}
+              data-testid="cozinha-finalizar-btn"
+              className="btn btn-success btn-lg"
+            >
+              Pronto
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

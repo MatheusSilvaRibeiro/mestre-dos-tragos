@@ -6,6 +6,7 @@ import type {
   Adicional,
   Aba,
   ProdutoPayload,
+  GrupoPrecoAdicional,
 } from './types';
 import { moeda } from './types';
 import ProdutoModal from './ProdutoModal.tsx';
@@ -19,7 +20,7 @@ export default function Cardapio() {
   const [modalProd, setModal] = useState(false);
   const [editProd, setEdit] = useState<Produto | null>(null);
   const [novaCateg, setNovaC] = useState('');
-  const [novoAdic, setNovoA] = useState({ nome: '', preco: '' });
+  const [novoAdic, setNovoA] = useState<{ nome: string; preco: string; grupoPreco: GrupoPrecoAdicional | '' }>({ nome: '', preco: '', grupoPreco: '' });
 
   useEffect(() => { carregar(); }, []);
 
@@ -108,13 +109,15 @@ export default function Cardapio() {
 
   async function salvarAdicional() {
     if (!novoAdic.nome.trim()) return;
+    if (!novoAdic.grupoPreco) { alert('Selecione o grupo de preco (Lanches ou Porcoes).'); return; }
     try {
       await api.post('/adicionais', {
         nome: novoAdic.nome.trim(),
         preco: parseFloat(novoAdic.preco) || 0,
+        grupoPreco: novoAdic.grupoPreco,
         ativo: true,
       });
-      setNovoA({ nome: '', preco: '' });
+      setNovoA({ nome: '', preco: '', grupoPreco: '' });
       carregar();
     } catch {
       alert('Erro ao criar adicional.');
@@ -127,6 +130,17 @@ export default function Cardapio() {
       carregar();
     } catch {
       alert('Erro ao alterar adicional.');
+    }
+  }
+
+  // Atualiza so o grupo de preco de um adicional ja existente — sem abrir
+  // edicao geral, salva na hora (mesmo padrao do toggle de Ativo/Inativo).
+  async function atualizarGrupoPreco(a: Adicional, grupoPreco: GrupoPrecoAdicional) {
+    try {
+      await api.put(`/adicionais/${a.id}`, { grupoPreco });
+      carregar();
+    } catch {
+      alert('Erro ao alterar grupo de preco do adicional.');
     }
   }
 
@@ -286,11 +300,29 @@ export default function Cardapio() {
       )}
 
       {aba === 'adicionais' && (
-        <div className="animate-fade-in" style={{ maxWidth: 520 }}>
-          <div className="surface-elevated" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', gap: '0.75rem' }}>
-            <input className="input-field" data-testid="adicional-nome-input" style={{ flex: 1 }} placeholder="Nome do adicional..." value={novoAdic.nome} onChange={e => setNovoA(p => ({ ...p, nome: e.target.value }))} />
-            <input className="input-field" data-testid="adicional-preco-input" type="number" min="0" step="0.01" placeholder="R$ 0,00" style={{ width: 110 }} value={novoAdic.preco} onChange={e => setNovoA(p => ({ ...p, preco: e.target.value }))} />
-            <button onClick={salvarAdicional} data-testid="adicional-criar-btn" className="btn btn-primary">+ Criar</button>
+        <div className="animate-fade-in" style={{ maxWidth: 620 }}>
+          <div className="surface-elevated" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <input className="input-field" data-testid="adicional-nome-input" style={{ flex: 1 }} placeholder="Nome do adicional..." value={novoAdic.nome} onChange={e => setNovoA(p => ({ ...p, nome: e.target.value }))} />
+              <input className="input-field" data-testid="adicional-preco-input" type="number" min="0" step="0.01" placeholder="R$ 0,00" style={{ width: 110 }} value={novoAdic.preco} onChange={e => setNovoA(p => ({ ...p, preco: e.target.value }))} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Grupo de preço *</span>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                {(['LANCHES', 'PORCOES'] as GrupoPrecoAdicional[]).map(g => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setNovoA(p => ({ ...p, grupoPreco: g }))}
+                    data-testid={`adicional-grupo-${g}`}
+                    className={`btn btn-sm ${novoAdic.grupoPreco === g ? 'btn-primary' : 'btn-ghost'}`}
+                  >
+                    {g === 'LANCHES' ? 'Lanches' : 'Porções'}
+                  </button>
+                ))}
+              </div>
+              <button onClick={salvarAdicional} data-testid="adicional-criar-btn" className="btn btn-primary" style={{ marginLeft: 'auto' }}>+ Criar</button>
+            </div>
           </div>
 
           {adicionais.length === 0 ? (
@@ -301,10 +333,23 @@ export default function Cardapio() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {adicionais.map(a => (
-                <div key={a.id} data-testid="adicional-item" data-nome={a.nome} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${a.ativo ? 'var(--color-success)' : 'var(--border-color)'}`, opacity: a.ativo ? 1 : 0.5 }}>
+                <div key={a.id} data-testid="adicional-item" data-nome={a.nome} className="surface-elevated" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderLeft: `3px solid ${a.ativo ? 'var(--color-success)' : 'var(--border-color)'}`, opacity: a.ativo ? 1 : 0.5, flexWrap: 'wrap', gap: '0.5rem' }}>
                   <span data-testid="adicional-item-nome" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{a.nome}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <span data-testid="adicional-item-preco" style={{ fontWeight: 700, color: 'var(--brand-primary)', fontSize: '0.875rem' }}>{moeda(a.preco)}</span>
+                    <div style={{ display: 'flex', gap: '0.3rem' }} title="Grupo de preço">
+                      {(['LANCHES', 'PORCOES'] as GrupoPrecoAdicional[]).map(g => (
+                        <button
+                          key={g}
+                          onClick={() => atualizarGrupoPreco(a, g)}
+                          data-testid={`adicional-item-grupo-${g}`}
+                          className={`btn btn-sm ${a.grupoPreco === g ? 'btn-primary' : 'btn-ghost'}`}
+                        >
+                          {g === 'LANCHES' ? 'Lanches' : 'Porções'}
+                        </button>
+                      ))}
+                      {!a.grupoPreco && <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', alignSelf: 'center' }}>sem grupo</span>}
+                    </div>
                     <button onClick={() => toggleAdicional(a)} data-testid="adicional-item-toggle" className={`btn btn-sm ${a.ativo ? 'btn-success' : 'btn-ghost'}`}>{a.ativo ? 'Ativo' : 'Inativo'}</button>
                     <button onClick={() => deletarAdicional(a.id)} data-testid="adicional-item-deletar" className="btn btn-icon btn-danger">🗑️</button>
                   </div>

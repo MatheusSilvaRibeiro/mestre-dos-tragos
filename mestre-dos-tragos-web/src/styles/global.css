@@ -854,7 +854,396 @@ select.input-field option { background: var(--bg-elevated); }
   transform: translateY(-1px);
 }
 
-/* 
+/*
+   PAINEL DA COZINHA
+   Layout operacional: leitura de longe, rolagem independente por etapa
+   e alvos de toque confortaveis em tablet.
+ */
+.cozinha-page {
+  min-height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(251, 191, 36, 0.08), transparent 28rem),
+    var(--bg-base);
+}
+
+.cozinha-header {
+  min-height: 76px;
+  padding: 0.75rem clamp(1rem, 2.5vw, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-shrink: 0;
+  background: rgba(17, 17, 17, 0.94);
+  border-bottom: 1px solid var(--border-default);
+  backdrop-filter: blur(14px);
+  z-index: 2;
+}
+
+.cozinha-brand,
+.cozinha-resumo {
+  display: flex;
+  align-items: center;
+}
+
+.cozinha-brand { gap: 0.875rem; }
+
+.cozinha-brand-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05));
+  border: 1px solid var(--border-brand);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.cozinha-brand-copy { line-height: 1.1; }
+.cozinha-brand-copy h1 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  letter-spacing: -0.025em;
+}
+
+.cozinha-eyebrow,
+.cozinha-lane-kicker {
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cozinha-live { margin-left: 0.25rem; }
+
+.cozinha-resumo {
+  gap: 0.5rem;
+  padding: 0.3rem;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.cozinha-resumo-item {
+  min-width: 88px;
+  padding: 0.4rem 0.85rem;
+  display: grid;
+  grid-template-columns: auto;
+  text-align: center;
+  border-radius: var(--radius-md);
+}
+
+.cozinha-resumo-item + .cozinha-resumo-item { border-left: 1px solid var(--border-subtle); }
+.cozinha-resumo-item strong { font-size: 1.35rem; line-height: 1; }
+.cozinha-resumo-item span {
+  margin-top: 0.25rem;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.cozinha-resumo-item--pendente strong { color: var(--brand-primary); }
+.cozinha-resumo-item--preparo strong { color: var(--status-info); }
+.cozinha-resumo-item--itens strong { color: var(--text-primary); }
+
+.cozinha-board {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(380px, 1.1fr);
+  gap: 1rem;
+  padding: 1rem clamp(1rem, 2.5vw, 2rem) 1.5rem;
+}
+
+.cozinha-lane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(17, 17, 17, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.cozinha-lane--pendente { border-top: 3px solid var(--brand-primary); }
+.cozinha-lane--preparo { border-top: 3px solid var(--status-info); }
+
+.cozinha-lane-header {
+  min-height: 70px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--bg-elevated), rgba(26,26,26,0.55));
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cozinha-lane-header h2 {
+  margin: 0.2rem 0 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.cozinha-lane-content {
+  min-height: 0;
+  padding: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  align-content: start;
+  gap: 0.85rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 820px) {
+  .cozinha-page { height: auto; min-height: 100dvh; overflow: visible; }
+  .cozinha-header { align-items: flex-start; }
+  .cozinha-live, .cozinha-resumo-item--itens { display: none; }
+  .cozinha-resumo-item { min-width: 66px; padding-inline: 0.55rem; }
+  .cozinha-board { grid-template-columns: 1fr; overflow: visible; }
+  .cozinha-lane { min-height: 300px; max-height: none; }
+  .cozinha-lane-content { overflow: visible; }
+}
+
+@media (max-width: 520px) {
+  .cozinha-header { padding: 0.75rem; gap: 0.5rem; }
+  .cozinha-brand-icon { width: 40px; height: 40px; }
+  .cozinha-eyebrow { display: none; }
+  .cozinha-brand-copy h1 { margin: 0; }
+  .cozinha-resumo { gap: 0; }
+  .cozinha-resumo-item { min-width: 56px; padding: 0.35rem; }
+  .cozinha-resumo-item strong { font-size: 1.1rem; }
+  .cozinha-resumo-item span { font-size: 0.56rem; }
+  .cozinha-board { padding: 0.75rem; gap: 0.75rem; }
+  .pedido-card-footer { align-items: stretch; flex-direction: column; }
+  .pedido-card-acoes { display: grid; grid-template-columns: 0.8fr 1.2fr; }
+  .pedido-card-acoes .btn { min-height: 46px; }
+}
+
+/*
+   PEDIDO CARD (COZINHA)
+   Fontes e botoes maiores que o normal do sistema de proposito — essa
+   tela costuma ficar num tablet/monitor fixo na cozinha, vista de longe
+   e tocada com as maos ocupadas, entao legibilidade > densidade.
+ */
+.pedido-card {
+  background:       var(--bg-surface);
+  border:           1px solid var(--border-subtle);
+  border-left:      4px solid var(--brand-primary);
+  border-radius:    var(--radius-lg);
+  box-shadow:       var(--shadow-sm);
+  padding:          1.125rem;
+  display:          flex;
+  flex-direction:   column;
+  gap:              0.75rem;
+  transition:       border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.pedido-card--em-preparo {
+  border-left-color: var(--color-info);
+}
+
+.pedido-card--urgente {
+  border-left-color: var(--color-danger);
+  box-shadow:         0 0 0 1px rgba(244, 63, 94, 0.25), var(--shadow-md);
+}
+
+.pedido-card-header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     flex-start;
+  gap:             0.75rem;
+}
+
+.pedido-card-cliente {
+  font-size:   1.0625rem;
+  font-weight: 800;
+  color:       var(--text-primary);
+  line-height: 1.25;
+}
+
+.pedido-card-id {
+  font-size:     0.75rem;
+  font-weight:   600;
+  color:         var(--text-tertiary);
+  margin-top:    0.125rem;
+}
+
+.pedido-card-meta {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            0.35rem;
+  flex-shrink:    0;
+}
+
+.pedido-card-tempo {
+  font-size:   0.8125rem;
+  font-weight: 700;
+  color:       var(--text-tertiary);
+}
+
+.pedido-card-tempo--urgente {
+  color: var(--color-danger);
+}
+
+.pedido-card-itens {
+  display:        flex;
+  flex-direction: column;
+  gap:            0.65rem;
+}
+
+.pedido-card-item {
+  padding-bottom: 0.65rem;
+  border-bottom:  1px solid var(--border-subtle);
+}
+.pedido-card-item:last-child {
+  padding-bottom: 0;
+  border-bottom:  none;
+}
+
+.pedido-card-item-nome {
+  font-size:   1rem;
+  font-weight: 700;
+  color:       var(--text-primary);
+}
+
+.pedido-card-item-tamanho {
+  font-weight: 400;
+  font-size:   0.875rem;
+  color:       var(--text-tertiary);
+}
+
+.pedido-card-adicionais,
+.pedido-card-sabores {
+  font-size:  0.8125rem;
+  color:      var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.pedido-card-footer {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             0.75rem;
+  padding-top:     0.875rem;
+  border-top:      1px solid var(--border-subtle);
+}
+
+.pedido-card-total {
+  font-size:   1.0625rem;
+  font-weight: 800;
+  color:       var(--brand-primary);
+}
+
+.pedido-card-acoes {
+  display: flex;
+  gap:     0.5rem;
+}
+
+/*
+   COMANDA DE IMPRESSAO (80mm)
+ */
+.comanda-print {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .comanda-print,
+  .comanda-print * {
+    visibility: visible;
+  }
+
+  .comanda-print {
+    display:     block;
+    position:    absolute;
+    top:         0;
+    left:        0;
+    width:       72mm;
+    padding:     2mm;
+    color:       #000;
+    background:  #fff;
+    font-family: 'Courier New', monospace;
+    font-size:   11px;
+    line-height: 1.4;
+  }
+
+  @page {
+    size:   80mm auto;
+    margin: 0;
+  }
+}
+
+.comanda-tipo {
+  font-size:      16px;
+  font-weight:    800;
+  text-align:     center;
+  letter-spacing: 2px;
+  margin-bottom:  4px;
+}
+
+.comanda-cliente {
+  font-size:     14px;
+  font-weight:   800;
+  text-align:    center;
+  margin-bottom: 2px;
+}
+
+.comanda-horario {
+  text-align:    center;
+  font-size:     10px;
+  margin-bottom: 6px;
+}
+
+.comanda-divisor {
+  border-top: 1px dashed #000;
+  margin:     6px 0;
+}
+
+.comanda-item {
+  margin-bottom: 4px;
+}
+
+.comanda-item-linha {
+  display:         flex;
+  justify-content: space-between;
+  font-weight:     700;
+}
+
+.comanda-adicional {
+  padding-left: 8px;
+  font-size:    10px;
+}
+
+.comanda-observacoes {
+  margin:    6px 0;
+  font-size: 10px;
+}
+
+.comanda-total {
+  display:         flex;
+  justify-content: space-between;
+  font-weight:     800;
+  font-size:       13px;
+  margin-top:      6px;
+}
+
+/*
    ANIMATIONS
  */
 @keyframes fadeIn {

@@ -4,6 +4,22 @@ import { ZodError } from 'zod';
 import prisma from '../config/prisma';
 import { criarProdutoSchema, editarProdutoSchema, parsePreco } from '../validators/produtoSchemas';
 
+// Confere se os adicionais escolhidos sao compativeis com o tipo do produto
+// (LANCHE so aceita adicionais do grupo LANCHES; BATATA_FRITA/PORCAO_MISTA
+// so aceitam do grupo PORCOES). Adicionais antigos, sem grupo definido
+// (grupoPreco null), sao compativeis com qualquer tipo. Retorna os
+// adicionais incompativeis encontrados (vazio = tudo certo).
+async function buscarAdicionaisIncompativeis(adicionaisIds: string[], tipo: TipoProduto) {
+  const grupoEsperado = tipo === 'LANCHE' ? 'LANCHES' : 'PORCOES';
+
+  const adicionais = await prisma.adicional.findMany({
+    where: { id: { in: adicionaisIds } },
+    select: { id: true, nome: true, grupoPreco: true },
+  });
+
+  return adicionais.filter((a) => a.grupoPreco !== null && a.grupoPreco !== grupoEsperado);
+}
+
 // Evita repetir o mesmo include gigante em 4 handlers diferentes
 const produtoInclude = {
   categoria: { select: { id: true, nome: true } },
@@ -94,6 +110,15 @@ export async function criar(req: Request, res: Response) {
       return res.status(400).json({ erro: 'Categoria não encontrada!' });
     }
 
+    if (adicionaisIds && adicionaisIds.length > 0) {
+      const incompativeis = await buscarAdicionaisIncompativeis(adicionaisIds, tipo as TipoProduto);
+      if (incompativeis.length > 0) {
+        return res.status(400).json({
+          erro: `Adicional(is) incompatível(is) com o tipo do produto: ${incompativeis.map((a) => a.nome).join(', ')}`,
+        });
+      }
+    }
+
     const data: Prisma.ProdutoCreateInput = {
       nome: nome as string,
       descricao: descricao ?? null,
@@ -172,6 +197,15 @@ export async function editar(req: Request, res: Response) {
 
       if (!categoriaExiste) {
         return res.status(400).json({ erro: 'Categoria não encontrada!' });
+      }
+    }
+
+    if (adicionaisIds && adicionaisIds.length > 0) {
+      const incompativeis = await buscarAdicionaisIncompativeis(adicionaisIds, existe.tipo);
+      if (incompativeis.length > 0) {
+        return res.status(400).json({
+          erro: `Adicional(is) incompatível(is) com o tipo do produto: ${incompativeis.map((a) => a.nome).join(', ')}`,
+        });
       }
     }
 
