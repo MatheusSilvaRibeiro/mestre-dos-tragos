@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import api from '../../services/api';
 import type { Pedido } from './types';
 import PedidoCard from './PedidoCard';
+import ComandaImpressao from './ComandaImpressao';
 import { tocarSomNotificacao } from './notificationSound';
 
 export default function Cozinha() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [agora, setAgora] = useState(() => Date.now());
+  const [pedidoParaImprimir, setPedidoParaImprimir] = useState<Pedido | null>(null);
+  const pedidoImprimindoRef = useRef<Pedido | null>(null);
 
   // Atualiza o horario atual a cada 10s para recalcular os timers dos cards
   useEffect(() => {
@@ -80,6 +83,28 @@ export default function Cozinha() {
     }
   }
 
+  // Imprimir comanda — abre a caixa de impressao do navegador. Ao fechar
+  // (imprimindo ou cancelando), o "afterprint" abaixo aceita o pedido
+  // automaticamente, se ainda estiver PENDENTE. Reimpressao (pedido ja
+  // EM_PREPARO) so reabre a caixa, sem mudar status de novo.
+  function imprimir(pedido: Pedido) {
+    pedidoImprimindoRef.current = pedido;
+    setPedidoParaImprimir(pedido);
+    requestAnimationFrame(() => window.print());
+  }
+
+  useEffect(() => {
+    function aoFecharImpressao() {
+      const pedido = pedidoImprimindoRef.current;
+      if (pedido?.status === 'PENDENTE') {
+        aceitar(pedido.id);
+      }
+    }
+
+    window.addEventListener('afterprint', aoFecharImpressao);
+    return () => window.removeEventListener('afterprint', aoFecharImpressao);
+  }, []);
+
   const pendentes = pedidos.filter(p => p.status === 'PENDENTE');
   const emPreparo = pedidos.filter(p => p.status === 'EM_PREPARO');
 
@@ -149,7 +174,7 @@ export default function Cozinha() {
                 <span style={{ fontSize: '0.875rem' }}>Nenhum pendente</span>
               </div>
             ) : pendentes.map(p => (
-              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} />
+              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} onImprimir={imprimir} />
             ))}
           </div>
 
@@ -165,12 +190,14 @@ export default function Cozinha() {
                 <span style={{ fontSize: '0.875rem' }}>Nenhum em preparo</span>
               </div>
             ) : emPreparo.map(p => (
-              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} />
+              <PedidoCard key={p.id} pedido={p} agora={agora} onAceitar={aceitar} onFinalizar={finalizar} onImprimir={imprimir} />
             ))}
           </div>
 
         </div>
       )}
+
+      <ComandaImpressao pedido={pedidoParaImprimir} />
     </div>
   );
 }
