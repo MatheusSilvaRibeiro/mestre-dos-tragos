@@ -22,6 +22,9 @@ jest.mock('../config/prisma', () => ({
     categoria: {
       findUnique: jest.fn(),
     },
+    adicional: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
@@ -290,6 +293,9 @@ describe('produtoController.criar', () => {
 
   it('cria um LANCHE com sucesso', async () => {
     (prisma.categoria.findUnique as jest.Mock).mockResolvedValue({ id: 'cat-1', nome: 'Lanches' });
+    (prisma.adicional.findMany as jest.Mock).mockResolvedValue([
+      { id: 'ad-1', nome: 'Queijo Extra', grupoPreco: 'LANCHES' },
+    ]);
 
     const produtoCriado = { id: 'prod-1', nome: 'X-Burger', tipo: 'LANCHE', preco: 10 };
     (prisma.produto.create as jest.Mock).mockResolvedValue(produtoCriado);
@@ -326,6 +332,32 @@ describe('produtoController.criar', () => {
     expect(res.json).toHaveBeenCalledWith({
       mensagem: 'Produto criado com sucesso!',
       produto: produtoCriado,
+    });
+  });
+
+  it('retorna 400 quando um adicional selecionado é incompatível com o tipo do produto', async () => {
+    (prisma.categoria.findUnique as jest.Mock).mockResolvedValue({ id: 'cat-1', nome: 'Lanches' });
+    (prisma.adicional.findMany as jest.Mock).mockResolvedValue([
+      { id: 'ad-1', nome: 'Molho Especial (P/M/G)', grupoPreco: 'PORCOES' },
+    ]);
+
+    const req = {
+      body: {
+        nome: 'X-Burger',
+        categoriaId: 'cat-1',
+        tipo: 'LANCHE',
+        preco: 10,
+        adicionaisIds: ['ad-1'],
+      },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await criar(req, res);
+
+    expect(prisma.produto.create).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      erro: 'Adicional(is) incompatível(is) com o tipo do produto: Molho Especial (P/M/G)',
     });
   });
 
@@ -479,6 +511,27 @@ describe('produtoController.editar', () => {
     expect(res.json).toHaveBeenCalledWith({
       mensagem: 'Produto atualizado com sucesso!',
       produto: produtoAtualizado,
+    });
+  });
+
+  it('retorna 400 ao editar quando um adicional selecionado é incompatível com o tipo do produto', async () => {
+    (prisma.produto.findUnique as jest.Mock).mockResolvedValue({ id: 'prod-1', tipo: 'LANCHE' });
+    (prisma.adicional.findMany as jest.Mock).mockResolvedValue([
+      { id: 'ad-1', nome: 'Molho Especial (P/M/G)', grupoPreco: 'PORCOES' },
+    ]);
+
+    const req = {
+      params: { id: 'prod-1' },
+      body: { adicionaisIds: ['ad-1'] },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await editar(req, res);
+
+    expect(prisma.produto.update).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      erro: 'Adicional(is) incompatível(is) com o tipo do produto: Molho Especial (P/M/G)',
     });
   });
 

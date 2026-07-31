@@ -11,11 +11,14 @@ export interface Tamanho {
   preco: number;
 }
 
+export type GrupoPrecoAdicional = 'LANCHES' | 'PORCOES';
+
 export interface Adicional {
   id: string;
   nome: string;
   preco: number;
   ativo: boolean;
+  grupoPreco: GrupoPrecoAdicional | null;
 }
 
 export interface AdicionaisProduto {

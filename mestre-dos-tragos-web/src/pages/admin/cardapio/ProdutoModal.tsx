@@ -3,6 +3,15 @@ import type { Produto, Categoria, Adicional, Tamanho, ProdutoPayload, TipoProdut
 
 type TipoForm = TipoProduto;
 
+// Adicionais sem grupoPreco (cadastrados antes dessa regra existir) servem
+// pra qualquer tipo. Os demais só aparecem pro tipo de produto compatível
+// com o modelo de cobranca deles (LANCHES = preco fixo, PORCOES = por tamanho).
+function adicionalCompativel(a: Adicional, tipo: TipoForm): boolean {
+  if (!a.grupoPreco) return true;
+  if (tipo === 'LANCHE') return a.grupoPreco === 'LANCHES';
+  return a.grupoPreco === 'PORCOES';
+}
+
 interface Props {
   produto:    Produto | null;
   categorias: Categoria[];
@@ -49,11 +58,17 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
     })) ?? []
   );
 
-  // IDs dos adicionais selecionados — compativel com ambos os formatos da API
+  // IDs dos adicionais selecionados — compativel com ambos os formatos da API.
+  // Descarta vinculos antigos que ficaram incompativeis com o tipo do produto
+  // (ex: adicional marcado como "Porcoes" depois de ja estar ligado a um
+  // Lanche) — sem isso, o formulario travaria ao salvar qualquer mudanca,
+  // mesmo sem mexer nos adicionais, porque o backend rejeitaria o vinculo.
+  const adicionaisAtuais: Adicional[] =
+    produto?.adicionaisProduto?.map(ap => ap.adicional)
+    ?? produto?.adicionais
+    ?? [];
   const [adicSel, setAdicSel] = useState<string[]>(
-    produto?.adicionaisProduto?.map(ap => ap.adicional.id)
-    ?? produto?.adicionais?.map(a => a.id)
-    ?? []
+    adicionaisAtuais.filter(a => adicionalCompativel(a, tipo)).map(a => a.id)
   );
 
   // Alterna selecao de adicional — adiciona se nao estiver, remove se estiver
@@ -259,12 +274,12 @@ export default function ProdutoModal({ produto, categorias, adicionais, onSalvar
           </div>
         )}
 
-        {/* ADICIONAIS — chips selecionaveis, visivel apenas se houver adicionais ativos */}
-        {adicionais.filter(a => a.ativo).length > 0 && (
+        {/* ADICIONAIS — chips selecionaveis, filtrados pelo tipo do produto */}
+        {adicionais.filter(a => a.ativo && adicionalCompativel(a, tipo)).length > 0 && (
           <div>
             <span style={labelStyle}>Adicionais disponiveis</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-              {adicionais.filter(a => a.ativo).map(a => (
+              {adicionais.filter(a => a.ativo && adicionalCompativel(a, tipo)).map(a => (
                 <button
                   key={a.id}
                   type="button"

@@ -53,12 +53,13 @@ export async function buscarPorId(req: Request, res: Response) {
 // ─────────────────────────────────────────────────────────
 export async function criar(req: Request, res: Response) {
   try {
-    const { nome, preco, precoPorTamanho } = criarAdicionalSchema.parse(req.body);
+    const { nome, preco, precoPorTamanho, grupoPreco } = criarAdicionalSchema.parse(req.body);
 
     const adicional = await prisma.adicional.create({
       data: {
         nome,
         preco: Number(preco),
+        grupoPreco,
         ...(precoPorTamanho && precoPorTamanho.length > 0 && {
           precoPorTamanho: {
             create: precoPorTamanho.map((p) => ({
@@ -92,7 +93,7 @@ export async function criar(req: Request, res: Response) {
 export async function editar(req: Request, res: Response) {
   try {
     const id = req.params.id as string;
-    const { nome, preco, precoPorTamanho, ativo } = editarAdicionalSchema.parse(req.body);
+    const { nome, preco, precoPorTamanho, ativo, grupoPreco } = editarAdicionalSchema.parse(req.body);
 
     const existe = await prisma.adicional.findUnique({ where: { id } });
     if (!existe) {
@@ -105,6 +106,7 @@ export async function editar(req: Request, res: Response) {
         ...(nome && { nome }),
         ...(preco !== undefined && { preco: Number(preco) }),
         ...(ativo !== undefined && { ativo }),
+        ...(grupoPreco !== undefined && { grupoPreco }),
         ...(precoPorTamanho && precoPorTamanho.length > 0 && {
           precoPorTamanho: {
             deleteMany: {},

@@ -19,17 +19,22 @@ const baseAdicionalSchema = z.object({
   // existir aqui, o Zod descartava "ativo" do payload silenciosamente —
   // o PUT respondia 200 mas nunca persistia a mudanca.
   ativo: z.boolean().optional(),
+  // Grupo de preco (LANCHES usa preco fixo, PORCOES usa preco por
+  // tamanho) — controla em quais tipos de produto o adicional pode
+  // ser vinculado. Opcional aqui pra permitir editar so esse campo
+  // via PUT em adicionais antigos, sem exigir os outros campos.
+  grupoPreco: z.enum(['LANCHES', 'PORCOES']).optional(),
 });
 
 // ─────────────────────────────────────────────────────────
-// CRIAR — nome e preco são obrigatórios (preco pode ser 0, então
-// checamos "=== undefined" em vez de usar um .min/required simples).
+// CRIAR — nome, preco e grupoPreco são obrigatórios (preco pode ser 0,
+// então checamos "=== undefined" em vez de usar um .min/required simples).
 // ─────────────────────────────────────────────────────────
 export const criarAdicionalSchema = baseAdicionalSchema.superRefine((data, ctx) => {
-  if (!data.nome || data.preco === undefined) {
+  if (!data.nome || data.preco === undefined || !data.grupoPreco) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Campos obrigatórios: nome, preco',
+      message: 'Campos obrigatórios: nome, preco, grupoPreco',
     });
   }
 });
