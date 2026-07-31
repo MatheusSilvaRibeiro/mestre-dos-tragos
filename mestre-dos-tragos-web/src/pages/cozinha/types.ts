@@ -21,15 +21,17 @@ export interface Pedido {
   itens:        ItemPedido[];
 }
 
-// 
+//
 // STATUS_CONFIG
-// Centraliza cor e label de cada status — usado no PedidoCard e em badges.
+// Centraliza o label de cada status — usado no PedidoCard. A cor do
+// badge vem das classes compartilhadas do design system (.badge-brand,
+// .badge-info), não daqui, pra não duplicar os tokens de cor.
 // Apenas PENDENTE, EM_PREPARO e PRONTO aparecem na tela da cozinha.
-// 
-export const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
-  PENDENTE:   { label: 'Pendente',   cor: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
-  EM_PREPARO: { label: 'Em Preparo', cor: '#3b82f6', bg: 'rgba(59,130,246,0.15)'  },
-  PRONTO:     { label: 'Pronto',     cor: '#10b981', bg: 'rgba(16,185,129,0.15)'  },
+//
+export const STATUS_CONFIG: Record<string, { label: string }> = {
+  PENDENTE:   { label: 'Pendente' },
+  EM_PREPARO: { label: 'Em Preparo' },
+  PRONTO:     { label: 'Pronto' },
 };
 
 // Tempo decorrido formatado — segundos, minutos ou horas

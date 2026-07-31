@@ -855,6 +855,127 @@ select.input-field option { background: var(--bg-elevated); }
 }
 
 /*
+   PEDIDO CARD (COZINHA)
+   Fontes e botoes maiores que o normal do sistema de proposito — essa
+   tela costuma ficar num tablet/monitor fixo na cozinha, vista de longe
+   e tocada com as maos ocupadas, entao legibilidade > densidade.
+ */
+.pedido-card {
+  background:       var(--bg-surface);
+  border:           1px solid var(--border-subtle);
+  border-left:      4px solid var(--brand-primary);
+  border-radius:    var(--radius-lg);
+  box-shadow:       var(--shadow-sm);
+  padding:          1.125rem;
+  display:          flex;
+  flex-direction:   column;
+  gap:              0.75rem;
+  transition:       border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.pedido-card--em-preparo {
+  border-left-color: var(--color-info);
+}
+
+.pedido-card--urgente {
+  border-left-color: var(--color-danger);
+  box-shadow:         0 0 0 1px rgba(244, 63, 94, 0.25), var(--shadow-md);
+}
+
+.pedido-card-header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     flex-start;
+  gap:             0.75rem;
+}
+
+.pedido-card-cliente {
+  font-size:   1.0625rem;
+  font-weight: 800;
+  color:       var(--text-primary);
+  line-height: 1.25;
+}
+
+.pedido-card-id {
+  font-size:     0.75rem;
+  font-weight:   600;
+  color:         var(--text-tertiary);
+  margin-top:    0.125rem;
+}
+
+.pedido-card-meta {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            0.35rem;
+  flex-shrink:    0;
+}
+
+.pedido-card-tempo {
+  font-size:   0.8125rem;
+  font-weight: 700;
+  color:       var(--text-tertiary);
+}
+
+.pedido-card-tempo--urgente {
+  color: var(--color-danger);
+}
+
+.pedido-card-itens {
+  display:        flex;
+  flex-direction: column;
+  gap:            0.65rem;
+}
+
+.pedido-card-item {
+  padding-bottom: 0.65rem;
+  border-bottom:  1px solid var(--border-subtle);
+}
+.pedido-card-item:last-child {
+  padding-bottom: 0;
+  border-bottom:  none;
+}
+
+.pedido-card-item-nome {
+  font-size:   1rem;
+  font-weight: 700;
+  color:       var(--text-primary);
+}
+
+.pedido-card-item-tamanho {
+  font-weight: 400;
+  font-size:   0.875rem;
+  color:       var(--text-tertiary);
+}
+
+.pedido-card-adicionais,
+.pedido-card-sabores {
+  font-size:  0.8125rem;
+  color:      var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.pedido-card-footer {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             0.75rem;
+  padding-top:     0.875rem;
+  border-top:      1px solid var(--border-subtle);
+}
+
+.pedido-card-total {
+  font-size:   1.0625rem;
+  font-weight: 800;
+  color:       var(--brand-primary);
+}
+
+.pedido-card-acoes {
+  display: flex;
+  gap:     0.5rem;
+}
+
+/*
    COMANDA DE IMPRESSAO (80mm)
  */
 .comanda-print {

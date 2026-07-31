@@ -178,11 +178,11 @@ export default function Cozinha() {
             ))}
           </div>
 
-          <div className="kanban-col" data-testid="cozinha-coluna-em-preparo" style={{ borderTop: '3px solid var(--color-success)' }}>
+          <div className="kanban-col" data-testid="cozinha-coluna-em-preparo" style={{ borderTop: '3px solid var(--color-info)' }}>
             <div className="kanban-col-header">
               <span>🔥</span>
               <span className="kanban-col-title">Em Preparo</span>
-              <span className="badge badge-success">{emPreparo.length}</span>
+              <span className="badge badge-info">{emPreparo.length}</span>
             </div>
             {emPreparo.length === 0 ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-tertiary)', paddingTop: '3rem' }}>
