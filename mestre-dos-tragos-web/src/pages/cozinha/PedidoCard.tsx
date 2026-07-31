@@ -6,6 +6,7 @@ interface Props {
   agora:       number;
   onAceitar:   (id: string) => void;
   onFinalizar: (id: string) => void;
+  onImprimir:  (pedido: Pedido) => void;
 }
 
 function tempoEmMinutos(criadoEm: string, agora: number): string {
@@ -14,7 +15,7 @@ function tempoEmMinutos(criadoEm: string, agora: number): string {
   return `${mins} min`;
 }
 
-export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Props) {
+export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar, onImprimir }: Props) {
   const cfg        = STATUS_CONFIG[pedido.status];
   const mins       = Math.floor((agora - new Date(pedido.criadoEm).getTime()) / 60000);
   const urgente    = mins >= 10;
@@ -102,23 +103,33 @@ export default function PedidoCard({ pedido, agora, onAceitar, onFinalizar }: Pr
           {moeda(pedido.valorTotal)}
         </span>
 
-        {isPendente ? (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
-            onClick={() => onAceitar(pedido.id)}
-            data-testid="cozinha-aceitar-btn"
-            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
+            onClick={() => onImprimir(pedido)}
+            data-testid="cozinha-imprimir-btn"
+            style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '0.4rem 0.9rem', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem' }}
           >
-            Aceitar
+            🖨️ Imprimir
           </button>
-        ) : (
-          <button
-            onClick={() => onFinalizar(pedido.id)}
-            data-testid="cozinha-finalizar-btn"
-            style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
-          >
-            Pronto
-          </button>
-        )}
+
+          {isPendente ? (
+            <button
+              onClick={() => onAceitar(pedido.id)}
+              data-testid="cozinha-aceitar-btn"
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
+            >
+              Aceitar
+            </button>
+          ) : (
+            <button
+              onClick={() => onFinalizar(pedido.id)}
+              data-testid="cozinha-finalizar-btn"
+              style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 1.1rem', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem' }}
+            >
+              Pronto
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

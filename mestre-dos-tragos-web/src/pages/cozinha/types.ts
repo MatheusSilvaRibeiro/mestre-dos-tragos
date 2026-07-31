@@ -5,7 +5,9 @@ export interface ItemPedido {
   produto:    { nome: string };
   quantidade: number;
   tamanho:    string | null;
-  adicionais: { adicional: { nome: string } }[];
+  precoUnit:  number;
+  subtotal:   number;
+  adicionais: { preco: number; adicional: { nome: string } }[];
   sabores:    { nome: string }[];
 }
 
