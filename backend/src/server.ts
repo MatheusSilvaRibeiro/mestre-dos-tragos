@@ -34,7 +34,14 @@ initSocket(server);
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'http://localhost:5173',
+  // Origens de localhost so fazem sentido fora de producao — em prod,
+  // a lista deve ter so o dominio real do frontend (FRONTEND_URL).
+  ...(process.env.NODE_ENV !== 'production'
+    ? [
+        'http://localhost:5173', // npm run dev (frontend, dia a dia)
+        'http://localhost:5199', // npm run test:e2e (build de preview do Playwright)
+      ]
+    : []),
 ].filter(Boolean) as string[];
 
 app.use(helmet());
