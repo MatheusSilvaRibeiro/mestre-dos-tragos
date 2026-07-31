@@ -1174,13 +1174,13 @@ select.input-field option { background: var(--bg-elevated); }
     position:    absolute;
     top:         0;
     left:        0;
-    width:       72mm;
-    padding:     2mm;
+    width:       76mm;
+    padding:     2mm 3mm;
     color:       #000;
     background:  #fff;
     font-family: 'Courier New', monospace;
-    font-size:   11px;
-    line-height: 1.4;
+    font-size:   14px;
+    line-height: 1.35;
   }
 
   @page {
@@ -1190,7 +1190,7 @@ select.input-field option { background: var(--bg-elevated); }
 }
 
 .comanda-tipo {
-  font-size:      16px;
+  font-size:      20px;
   font-weight:    800;
   text-align:     center;
   letter-spacing: 2px;
@@ -1198,7 +1198,7 @@ select.input-field option { background: var(--bg-elevated); }
 }
 
 .comanda-cliente {
-  font-size:     14px;
+  font-size:     19px;
   font-weight:   800;
   text-align:    center;
   margin-bottom: 2px;
@@ -1206,7 +1206,7 @@ select.input-field option { background: var(--bg-elevated); }
 
 .comanda-horario {
   text-align:    center;
-  font-size:     10px;
+  font-size:     13px;
   margin-bottom: 6px;
 }
 
@@ -1216,30 +1216,64 @@ select.input-field option { background: var(--bg-elevated); }
 }
 
 .comanda-item {
-  margin-bottom: 4px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted #000;
+}
+
+.comanda-item:last-of-type {
+  border-bottom: 0;
 }
 
 .comanda-item-linha {
   display:         flex;
   justify-content: space-between;
   font-weight:     700;
+  gap:             8px;
+  align-items:     flex-start;
 }
 
-.comanda-adicional {
-  padding-left: 8px;
-  font-size:    10px;
+.comanda-item-nome {
+  flex:        1;
+  font-size:   18px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.comanda-item-valor {
+  flex-shrink: 0;
+  font-size:   13px;
+}
+
+.comanda-adicional,
+.comanda-sabores {
+  padding-left: 18px;
+  margin-top:   3px;
+  font-size:    14px;
+  font-weight:  700;
 }
 
 .comanda-observacoes {
-  margin:    6px 0;
-  font-size: 10px;
+  margin:      8px 0;
+  padding:     7px;
+  border:      2px solid #000;
+  font-size:   16px;
+  font-weight: 900;
+  line-height: 1.25;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.comanda-observacoes--item {
+  margin: 7px 0 0;
 }
 
 .comanda-total {
   display:         flex;
   justify-content: space-between;
   font-weight:     800;
-  font-size:       13px;
+  font-size:       17px;
   margin-top:      6px;
 }
 
