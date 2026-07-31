@@ -18,10 +18,12 @@ export const itemPedidoSchema = z.object({
     z.string().min(1, 'Produto não informado!'),
   ),
   quantidade: quantidadeSchema,
-  tamanho: z.string().optional(),
+  // .nullable() alem de .optional(): o frontend manda `null` (nao omite o
+  // campo) quando o produto nao tem tamanho/sem adicionais/sem sabores.
+  tamanho: z.string().nullable().optional(),
   adicionais: z.array(z.string()).optional(),
   sabores: z.array(z.string()).optional(),
-  observacoes: z.string().optional(),
+  observacoes: z.string().nullable().optional(),
 });
 
 // ─────────────────────────────────────────────────────────
@@ -31,8 +33,10 @@ export const itemPedidoSchema = z.object({
 // tipo, etc.) dependem do banco e continuam no controller.
 // ─────────────────────────────────────────────────────────
 export const criarPedidoSchema = z.object({
-  nomeCliente: z.string().optional(),
-  observacoes: z.string().optional(),
+  // .nullable() alem de .optional(): o frontend manda `null` (nao omite o
+  // campo) quando "Nome do cliente" / "Observações" ficam em branco.
+  nomeCliente: z.string().nullable().optional(),
+  observacoes: z.string().nullable().optional(),
   itens: z.array(itemPedidoSchema).min(1, 'Pedido precisa ter pelo menos 1 item!'),
 });
 
